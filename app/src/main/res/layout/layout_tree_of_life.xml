@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp">
+
+    <!-- 三柱式布局 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:weightSum="3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        
+        <!-- 左柱 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <FrameLayout
+                android:id="@+id/card1"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card2"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card3"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card4"
+                android:layout_width="75dp"
+                android:layout_height="110dp" />
+        </LinearLayout>
+        
+        <!-- 中间柱 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <View
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+                
+            <FrameLayout
+                android:id="@+id/card5"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card6"
+                android:layout_width="75dp"
+                android:layout_height="110dp" />
+                
+            <View
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+        
+        <!-- 右柱 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <FrameLayout
+                android:id="@+id/card7"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card8"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card9"
+                android:layout_width="75dp"
+                android:layout_height="110dp"
+                android:layout_marginBottom="5dp" />
+                
+            <FrameLayout
+                android:id="@+id/card10"
+                android:layout_width="75dp"
+                android:layout_height="110dp" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout> 

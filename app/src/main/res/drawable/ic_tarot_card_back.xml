@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="300dp"
+    android:viewportWidth="200"
+    android:viewportHeight="300">
+    
+    <!-- 卡片背景 -->
+    <path
+        android:fillColor="#2B0B61"
+        android:pathData="M10,0L190,0A10,10 0,0 1,200 10L200,290A10,10 0,0 1,190 300L10,300A10,10 0,0 1,0 290L0,10A10,10 0,0 1,10 0z" />
+    
+    <!-- 卡片边框 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M15,5L185,5A10,10 0,0 1,195 15L195,285A10,10 0,0 1,185 295L15,295A10,10 0,0 1,5 285L5,15A10,10 0,0 1,15 5z"
+        android:strokeWidth="3"
+        android:strokeColor="#FFD700" />
+    
+    <!-- 卡片背面花纹 - 星星 -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M100,50L107,65L123,65L110,75L117,90L100,80L83,90L90,75L77,65L93,65z" />
+    
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M50,100L57,115L73,115L60,125L67,140L50,130L33,140L40,125L27,115L43,115z" />
+    
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M150,100L157,115L173,115L160,125L167,140L150,130L133,140L140,125L127,115L143,115z" />
+    
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M50,200L57,215L73,215L60,225L67,240L50,230L33,240L40,225L27,215L43,215z" />
+    
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M150,200L157,215L173,215L160,225L167,240L150,230L133,240L140,225L127,215L143,215z" />
+    
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M100,150L107,165L123,165L110,175L117,190L100,180L83,190L90,175L77,165L93,165z" />
+    
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M100,250L107,265L123,265L110,275L117,290L100,280L83,290L90,275L77,265L93,265z" />
+    
+    <!-- 中央图案 - 月亮和太阳 -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M100,150m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+    
+    <path
+        android:fillColor="#2B0B61"
+        android:pathData="M105,150m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0" />
+</vector> 

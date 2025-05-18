@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 基础应用主题 -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!-- 自定义日历样式，禁用年份修改功能 -->
+    <style name="CustomCalendarView" parent="android:Widget.CalendarView">
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:showWeekNumber">false</item>
+        <item name="android:datePickerMode">calendar</item>
+    </style>
+    
+    <!-- 自定义日期选择器样式，禁用年份修改功能 -->
+    <style name="CustomDatePicker" parent="android:Widget.DatePicker">
+        <item name="android:datePickerMode">calendar</item>
+        <item name="android:calendarViewShown">true</item>
+        <item name="android:spinnersShown">false</item>
+    </style>
+</resources> 

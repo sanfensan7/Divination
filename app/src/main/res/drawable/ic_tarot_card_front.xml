@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="300dp"
+    android:viewportWidth="200"
+    android:viewportHeight="300">
+    
+    <!-- 卡片背景 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,0L190,0A10,10 0,0 1,200 10L200,290A10,10 0,0 1,190 300L10,300A10,10 0,0 1,0 290L0,10A10,10 0,0 1,10 0z" />
+    
+    <!-- 卡片边框 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M15,5L185,5A10,10 0,0 1,195 15L195,285A10,10 0,0 1,185 295L15,295A10,10 0,0 1,5 285L5,15A10,10 0,0 1,15 5z"
+        android:strokeWidth="3"
+        android:strokeColor="#B8860B" />
+    
+    <!-- 卡片内部边框 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M25,15L175,15A10,10 0,0 1,185 25L185,275A10,10 0,0 1,175 285L25,285A10,10 0,0 1,15 275L15,25A10,10 0,0 1,25 15z"
+        android:strokeWidth="1"
+        android:strokeColor="#B8860B" />
+    
+    <!-- 中心圆形图案 -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M100,150m-60,0a60,60 0,1 1,120 0a60,60 0,1 1,-120 0" />
+    
+    <!-- 上部图案 - 星星 -->
+    <path
+        android:fillColor="#B8860B"
+        android:pathData="M100,50L110,70L130,70L115,85L125,110L100,95L75,110L85,85L70,70L90,70z" />
+    
+    <!-- 下部图案 - 花 -->
+    <path
+        android:fillColor="#B8860B"
+        android:pathData="M100,250m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,250m-25,0a25,25 0,1 1,50 0a25,25 0,1 1,-50 0" />
+    
+    <path
+        android:fillColor="#B8860B"
+        android:pathData="M100,250m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    
+    <!-- 中心图案 - 抽象符号 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M70,120L130,120L130,180L70,180z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,90L100,210" 
+        android:strokeWidth="15"
+        android:strokeColor="#FFFFFF" />
+</vector> 

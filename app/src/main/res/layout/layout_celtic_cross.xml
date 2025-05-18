@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp">
+
+    <!-- 中心牌 -->
+    <FrameLayout
+        android:id="@+id/card1"
+        android:layout_width="75dp"
+        android:layout_height="110dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4" />
+
+    <!-- 覆盖牌 -->
+    <FrameLayout
+        android:id="@+id/card2"
+        android:layout_width="75dp"
+        android:layout_height="110dp"
+        android:rotation="90"
+        app:layout_constraintBottom_toBottomOf="@id/card1"
+        app:layout_constraintEnd_toEndOf="@id/card1"
+        app:layout_constraintStart_toStartOf="@id/card1"
+        app:layout_constraintTop_toTopOf="@id/card1" />
+
+    <!-- 下方牌 -->
+    <FrameLayout
+        android:id="@+id/card3"
+        android:layout_width="75dp"
+        android:layout_height="110dp"
+        android:layout_marginTop="5dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/card1" />
+
+    <!-- 上方牌 -->
+    <FrameLayout
+        android:id="@+id/card4"
+        android:layout_width="75dp"
+        android:layout_height="110dp"
+        android:layout_marginBottom="5dp"
+        app:layout_constraintBottom_toTopOf="@id/card1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- 右侧牌 -->
+    <FrameLayout
+        android:id="@+id/card5"
+        android:layout_width="75dp"
+        android:layout_height="110dp"
+        android:layout_marginStart="5dp"
+        app:layout_constraintBottom_toBottomOf="@id/card1"
+        app:layout_constraintStart_toEndOf="@id/card1"
+        app:layout_constraintTop_toTopOf="@id/card1" />
+
+    <!-- 左侧牌 -->
+    <FrameLayout
+        android:id="@+id/card6"
+        android:layout_width="75dp"
+        android:layout_height="110dp"
+        android:layout_marginEnd="5dp"
+        app:layout_constraintBottom_toBottomOf="@id/card1"
+        app:layout_constraintEnd_toStartOf="@id/card1"
+        app:layout_constraintTop_toTopOf="@id/card1" />
+
+    <!-- 右侧立柱卡牌 - 使用垂直布局 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp"
+        app:layout_constraintStart_toEndOf="@id/card5"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+        
+        <FrameLayout
+            android:id="@+id/card7"
+            android:layout_width="75dp"
+            android:layout_height="110dp"
+            android:layout_marginBottom="2dp" />
+    
+        <FrameLayout
+            android:id="@+id/card8"
+            android:layout_width="75dp"
+            android:layout_height="110dp"
+            android:layout_marginBottom="2dp" />
+            
+        <FrameLayout
+            android:id="@+id/card9"
+            android:layout_width="75dp"
+            android:layout_height="110dp"
+            android:layout_marginBottom="2dp" />
+            
+        <FrameLayout
+            android:id="@+id/card10"
+            android:layout_width="75dp"
+            android:layout_height="110dp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">智能算命</string>
+    <string name="home_welcome">欢迎使用智能算命应用</string>
+    <string name="home_intro">基于DeepSeek AI技术，融合中西方传统算命方法，为您提供专业的命理解析。</string>
+    <string name="home_recommend">推荐算命方式</string>
+    <string name="chinese_fortune">中国传统算命</string>
+    <string name="western_fortune">西方传统占卜</string>
+    <string name="tab_all">全部</string>
+    <string name="tab_chinese">中国传统</string>
+    <string name="tab_western">西方传统</string>
+    <string name="start_divination">开始算命</string>
+    <string name="share_result">分享结果</string>
+    <string name="no_history">暂无历史记录</string>
+    <string name="go_to_divination">去"算命"页面开始您的命运之旅</string>
+    <string name="history_count">共有 %d 条历史记录</string>
+    <string name="api_key_title">DeepSeek API密钥</string>
+    <string name="api_key_description">请设置您的API密钥以使用高级算命功能</string>
+    <string name="api_key_hint">输入DeepSeek API密钥</string>
+    <string name="save">保存</string>
+    <string name="feedback">意见反馈</string>
+    <string name="privacy_policy">隐私政策</string>
+    <string name="about">关于</string>
+    <string name="version">版本：%s</string>
+    <string name="about_content">智能算命应用\n版本：%s\n\n本应用基于DeepSeek AI技术，集成了中外多种主流算命方法，为用户提供专业的命理解析服务。\n\n© 2025 三分三</string>
+    
+    <!-- 塔罗牌动画 -->
+    <string name="tarot_shuffling">请稍候，正在洗牌...</string>
+    <string name="tarot_select_card">请在心中默念问题，然后点击任意一张牌...</string>
+    <string name="tarot_select_more">请继续选择剩余的卡片...(%1$d/%2$d)</string>
+    <string name="tarot_reading_complete">塔罗牌解读完成，正在生成详细分析...</string>
+    <string name="tarot_card_selected">抽到的牌: %1$s (%2$s)</string>
+    
+    <!-- 底部导航 -->
+    <string name="nav_home">首页</string>
+    <string name="nav_divination">算命</string>
+    <string name="nav_profile">我的</string>
+    <string name="nav_settings">设置</string>
+</resources>
