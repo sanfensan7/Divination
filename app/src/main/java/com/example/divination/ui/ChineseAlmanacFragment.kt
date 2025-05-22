@@ -11,6 +11,8 @@ import com.example.divination.model.ChineseAlmanac
 import com.example.divination.utils.ChineseAlmanacService
 import java.util.Calendar
 import java.util.Date
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class ChineseAlmanacFragment : Fragment() {
 
@@ -32,6 +34,17 @@ class ChineseAlmanacFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        // 检查是否有传入的日期参数
+        arguments?.getString(ARG_DATE)?.let { dateString ->
+            try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                currentDate = sdf.parse(dateString) ?: Date()
+            } catch (e: Exception) {
+                // 解析失败，使用当前日期
+                currentDate = Date()
+            }
+        }
+        
         setupCalendarView()
         loadAlmanacData(currentDate)
     }
@@ -39,6 +52,11 @@ class ChineseAlmanacFragment : Fragment() {
     private fun setupCalendarView() {
         // 通过创建子类覆盖原有日历行为来禁用年份修改功能
         val calendarView = binding.calendarView
+        
+        // 设置日历初始日期为传入的日期或当前日期
+        val calendar = Calendar.getInstance()
+        calendar.time = currentDate
+        calendarView.date = calendar.timeInMillis
         
         // 监听日期变更事件
         calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
@@ -113,6 +131,18 @@ class ChineseAlmanacFragment : Fragment() {
     }
     
     companion object {
-        fun newInstance() = ChineseAlmanacFragment()
+        const val ARG_DATE = "date"
+        
+        fun newInstance(): ChineseAlmanacFragment {
+            return ChineseAlmanacFragment()
+        }
+        
+        fun newInstance(date: String): ChineseAlmanacFragment {
+            val fragment = ChineseAlmanacFragment()
+            val args = Bundle()
+            args.putString(ARG_DATE, date)
+            fragment.arguments = args
+            return fragment
+        }
     }
 } 

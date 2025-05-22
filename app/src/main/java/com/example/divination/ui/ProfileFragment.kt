@@ -20,9 +20,10 @@ import java.util.Locale
 class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding ?: throw IllegalStateException("Binding is null, Fragment可能已被销毁")
     
     private lateinit var resultAdapter: ResultHistoryAdapter
+    private var isActive = true // 跟踪Fragment是否处于活跃状态
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,24 +38,20 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         setupRecyclerView()
-        loadHistoryResults()
+        loadResults()
     }
     
     override fun onResume() {
         super.onResume()
         // 每次返回到此页面时更新结果列表
-        loadHistoryResults()
+        loadResults()
     }
     
     private fun setupRecyclerView() {
         resultAdapter = ResultHistoryAdapter(
             onItemClick = { result ->
                 // 处理结果点击
-                val resultFragment = DivinationResultFragment.newInstance(result.id)
-                parentFragmentManager.beginTransaction()
-                    .replace(R.id.fragmentContainer, resultFragment)
-                    .addToBackStack(null)
-                    .commit()
+                navigateToResultDetail(result)
             },
             onDeleteClick = { result ->
                 // 处理删除点击
@@ -65,6 +62,82 @@ class ProfileFragment : Fragment() {
         binding.rvResultHistory.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = resultAdapter
+        }
+    }
+    
+    private fun loadResults() {
+        try {
+            val results = LocalStorageService.getAllResults(requireContext())
+            if (results.isEmpty()) {
+                safeShowEmptyState(true)
+            } else {
+                safeShowEmptyState(false)
+                resultAdapter.submitList(results)
+            }
+        } catch (e: Exception) {
+            safeShowEmptyState(true)
+            safeShowError("加载结果失败：${e.message}")
+        }
+    }
+    
+    private fun safeShowEmptyState(isEmpty: Boolean) {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            binding.emptyView.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            binding.rvResultHistory.visibility = if (isEmpty) View.GONE else View.VISIBLE
+        } catch (e: Exception) {
+            // 忽略异常
+        }
+    }
+    
+    private fun safeShowError(message: String) {
+        if (!isActive || !isAdded) return
+        try {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            // 忽略异常
+        }
+    }
+    
+    private fun navigateToResultDetail(result: DivinationResult) {
+        if (!isActive || !isAdded) return
+        try {
+            val resultFragment = DivinationResultFragment.newInstance(result.id)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, resultFragment)
+                .addToBackStack(null)
+                .commit()
+        } catch (e: Exception) {
+            safeShowError("无法显示结果详情：${e.message}")
+        }
+    }
+    
+    private fun showClearHistoryConfirmation() {
+        if (!isActive || !isAdded) return
+        try {
+            AlertDialog.Builder(requireContext())
+                .setTitle("清除历史记录")
+                .setMessage("确定要清除所有历史记录吗？此操作不可撤销。")
+                .setPositiveButton("确定") { _, _ ->
+                    clearHistory()
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        } catch (e: Exception) {
+            safeShowError("无法显示确认对话框：${e.message}")
+        }
+    }
+    
+    private fun clearHistory() {
+        try {
+            val allResults = LocalStorageService.getAllResults(requireContext())
+            for (result in allResults) {
+                LocalStorageService.deleteResult(requireContext(), result.id)
+            }
+            loadResults() // 重新加载结果（应该显示空状态）
+            safeShowError("历史记录已清除")
+        } catch (e: Exception) {
+            safeShowError("清除历史记录失败：${e.message}")
         }
     }
     
@@ -88,39 +161,20 @@ class ProfileFragment : Fragment() {
         
         if (success) {
             // 重新加载历史记录列表
-            loadHistoryResults()
+            loadResults()
             Toast.makeText(requireContext(), "历史记录已删除", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(requireContext(), "删除失败，请重试", Toast.LENGTH_SHORT).show()
         }
     }
     
-    private fun loadHistoryResults() {
-        // 从本地存储加载所有历史结果
-        val results = LocalStorageService.getAllResults(requireContext())
-        
-        // 按时间倒序排序
-        val sortedResults = results.sortedByDescending { it.createTime }
-        
-        // 更新适配器
-        resultAdapter.submitList(sortedResults)
-        
-        // 更新UI显示
-        updateEmptyView(sortedResults.isEmpty())
-        updateResultCount(sortedResults.size)
-    }
-    
-    private fun updateEmptyView(isEmpty: Boolean) {
-        binding.emptyView.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        binding.rvResultHistory.visibility = if (isEmpty) View.GONE else View.VISIBLE
-    }
-    
-    private fun updateResultCount(count: Int) {
-        binding.tvResultCount.text = getString(R.string.history_count, count)
-    }
-    
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        isActive = false
     }
 } 

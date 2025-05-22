@@ -56,7 +56,7 @@ object DivinationMethodProvider {
                 id = "bazi",
                 name = "八字命理",
                 description = "根据出生年月日时推算命运",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_bazi,
                 type = 1,
                 inputFields = listOf(
                     InputField(
@@ -85,7 +85,7 @@ object DivinationMethodProvider {
                 id = "almanac",
                 name = "老黄历",
                 description = "查询每日宜忌、吉凶方位和时辰信息",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_huang_li,
                 type = 1,
                 inputFields = listOf(
                     InputField(
@@ -102,7 +102,7 @@ object DivinationMethodProvider {
                 id = "ziwei",
                 name = "紫微斗数",
                 description = "通过星盘分析人生运势",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_ziwei,
                 type = 1,
                 inputFields = listOf(
                     InputField(
@@ -136,12 +136,30 @@ object DivinationMethodProvider {
                 id = "zhouyi",
                 name = "周易卦象",
                 description = "易经六十四卦预测",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_zhouyi,
                 type = 1,
                 inputFields = listOf(
                     InputField(
                         id = "question",
                         name = "预测问题",
+                        type = 1
+                    )
+                )
+            )
+        )
+        
+        // 添加周公解梦功能
+        methods.add(
+            DivinationMethod(
+                id = "dream",
+                name = "周公解梦",
+                description = "解析梦境寓意与预示",
+                iconResId = R.drawable.ic_dream,
+                type = 1,
+                inputFields = listOf(
+                    InputField(
+                        id = "dreamContent",
+                        name = "梦境内容",
                         type = 1
                     )
                 )
@@ -154,19 +172,13 @@ object DivinationMethodProvider {
                 id = "tarot",
                 name = "塔罗牌",
                 description = "通过塔罗牌阵解读命运",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_tarot,
                 type = 2,
                 inputFields = listOf(
                     InputField(
                         id = "question",
                         name = "咨询问题",
                         type = 1
-                    ),
-                    InputField(
-                        id = "spread",
-                        name = "牌阵选择",
-                        type = 4,
-                        options = listOf("三张牌阵", "凯尔特十字阵", "生命之树阵")
                     )
                 )
             )
@@ -177,7 +189,7 @@ object DivinationMethodProvider {
                 id = "astrology",
                 name = "占星学",
                 description = "星盘解读与行星运势",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_astrology,
                 type = 2,
                 inputFields = listOf(
                     InputField(
@@ -204,7 +216,7 @@ object DivinationMethodProvider {
                 id = "numerology",
                 name = "数字命理学",
                 description = "通过数字揭示命运密码",
-                iconResId = R.drawable.ic_divination,
+                iconResId = R.drawable.ic_numerology,
                 type = 2,
                 inputFields = listOf(
                     InputField(

@@ -36,4 +36,21 @@
     <string name="nav_divination">算命</string>
     <string name="nav_profile">我的</string>
     <string name="nav_settings">设置</string>
+    
+    <!-- 结果显示 -->
+    <string name="loading_content">正在加载内容...</string>
+    <string name="empty_content">（无内容）</string>
+    <string name="error_display">显示出错，请重试</string>
+    <string name="result_error_title">加载失败</string>
+    <string name="result_error_message">结果内容加载失败，请返回重试</string>
+    <string name="retry">重试</string>
+    <string name="back">返回</string>
+
+    <!-- AI思考提示 -->
+    <string name="ai_thinking">AI思考中，请耐心等候...</string>
+    <string name="ai_thinking_time">AI思考中，可能需要%1$d秒左右，请耐心等候...</string>
+
+    <!-- 导航栏 -->
+    <string name="submit">提交</string>
+    <string name="share">分享</string>
 </resources>

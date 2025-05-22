@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
+    android:background="@color/divination_background"
     tools:context=".ui.ProfileFragment">
 
     <TextView
@@ -14,7 +15,7 @@
         android:layout_height="wrap_content"
         android:text="历史记录"
         android:textSize="20sp"
-        android:textStyle="bold"
+        style="@style/TitleTextStyle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -26,6 +27,7 @@
         android:layout_marginTop="8dp"
         android:text="共有 0 条历史记录"
         android:textSize="14sp"
+        android:textColor="@color/neutral_gray"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
@@ -35,21 +37,30 @@
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginTop="8dp"
-        android:background="?android:attr/listDivider"
+        android:background="@color/card_border"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvResultCount" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvResultHistory"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardRecyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="12dp"
+        style="@style/ModernCard"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider"
-        tools:listitem="@layout/item_result_history" />
+        app:layout_constraintTop_toBottomOf="@+id/divider">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvResultHistory"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="8dp"
+            tools:listitem="@layout/item_result_history" />
+    </com.google.android.material.card.MaterialCardView>
 
     <LinearLayout
         android:id="@+id/emptyView"
@@ -76,14 +87,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="暂无历史记录"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:textColor="@color/divination_text" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="去算命页面开始您的命运之旅"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:textColor="@color/neutral_gray" />
 
     </LinearLayout>
 

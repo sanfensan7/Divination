@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.divination.databinding.ItemDivinationMethodBinding
 import com.example.divination.model.DivinationMethod
+import com.example.divination.util.IconHelper
 
 /**
  * 算命方法适配器
@@ -35,7 +36,7 @@ class DivinationMethodAdapter(
         
         init {
             binding.root.setOnClickListener {
-                val position = bindingAdapterPosition
+                val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onItemClick(getItem(position))
                 }
@@ -45,7 +46,15 @@ class DivinationMethodAdapter(
         fun bind(method: DivinationMethod) {
             binding.tvMethodName.text = method.name
             binding.tvMethodDescription.text = method.description
-            binding.ivMethodIcon.setImageResource(method.iconResId)
+            
+            // 使用IconHelper设置图标和颜色
+            IconHelper.setMethodIcon(
+                method.name, 
+                binding.ivMethodIcon,
+                binding.iconBackgroundOuter,
+                binding.iconBackgroundInner,
+                binding.root.context
+            )
         }
     }
     

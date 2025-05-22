@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -14,18 +15,21 @@ import com.example.divination.R
 import com.example.divination.databinding.FragmentDivinationDetailBinding
 import com.example.divination.model.DivinationMethod
 import com.example.divination.model.InputField
+import com.example.divination.ui.CustomDatePickerDialog
 import com.example.divination.utils.DeepSeekService
 import com.example.divination.utils.DivinationMethodProvider
 import com.example.divination.utils.LocalStorageService
+import com.example.divination.utils.safePerformDivination
 import java.util.*
 
 class DivinationDetailFragment : Fragment() {
 
     private var _binding: FragmentDivinationDetailBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding ?: throw IllegalStateException("Binding is null, Fragment可能已被销毁")
     
     private lateinit var methodId: String
     private var method: DivinationMethod? = null
+    private var isActive = true // 跟踪Fragment是否处于活跃状态
     
     companion object {
         private const val ARG_METHOD_ID = "method_id"
@@ -84,7 +88,9 @@ class DivinationDetailFragment : Fragment() {
             
             val labelView = fieldView.findViewById<android.widget.TextView>(R.id.tvFieldLabel)
             val valueView = fieldView.findViewById<android.widget.EditText>(R.id.etFieldValue)
-            val spinnerView = fieldView.findViewById<android.widget.Spinner>(R.id.spinnerFieldValue)
+            val spinnerLayout = fieldView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.spinnerLayout)
+            val textInputLayout = fieldView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.textInputLayout)
+            val spinnerView = fieldView.findViewById<AutoCompleteTextView>(R.id.spinnerFieldValue)
             
             labelView.text = field.name
             
@@ -93,38 +99,43 @@ class DivinationDetailFragment : Fragment() {
             
             when (field.type) {
                 1 -> { // 文本
-                    valueView.isVisible = true
-                    spinnerView.isVisible = false
+                    textInputLayout.isVisible = true
+                    spinnerLayout.isVisible = false
+                    valueView.setHint("请输入")
                 }
                 2 -> { // 日期
-                    valueView.isVisible = true
-                    spinnerView.isVisible = false
-                    valueView.hint = "选择日期"
+                    textInputLayout.isVisible = true
+                    spinnerLayout.isVisible = false
+                    valueView.setHint("选择日期")
+                    valueView.isFocusableInTouchMode = false
                     valueView.isFocusable = false
+                    valueView.isClickable = true
                     valueView.setOnClickListener {
                         showDatePicker(valueView)
                     }
                 }
                 3 -> { // 时间
-                    valueView.isVisible = true
-                    spinnerView.isVisible = false
-                    valueView.hint = "选择时间"
+                    textInputLayout.isVisible = true
+                    spinnerLayout.isVisible = false
+                    valueView.setHint("选择时间")
+                    valueView.isFocusableInTouchMode = false
                     valueView.isFocusable = false
+                    valueView.isClickable = true
                     valueView.setOnClickListener {
                         showTimePicker(valueView)
                     }
                 }
                 4 -> { // 选择
-                    valueView.isVisible = false
-                    spinnerView.isVisible = true
+                    textInputLayout.isVisible = false
+                    spinnerLayout.isVisible = true
                     
                     val adapter = ArrayAdapter(
                         requireContext(),
-                        android.R.layout.simple_spinner_item,
+                        R.layout.item_dropdown_menu,
                         field.options
                     )
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                    spinnerView.adapter = adapter
+                    spinnerView.setAdapter(adapter)
+                    spinnerView.setHint("请选择")
                 }
             }
             
@@ -155,8 +166,10 @@ class DivinationDetailFragment : Fragment() {
             
             // 对于老黄历，启动专门的老黄历界面
             if (methodId == "almanac") {
-                // 启动老黄历Fragment
-                val almanacFragment = ChineseAlmanacFragment.newInstance()
+                // 获取用户选择的日期
+                val selectedDate = inputData["date"] ?: ""
+                // 启动老黄历Fragment，并传递日期参数
+                val almanacFragment = ChineseAlmanacFragment.newInstance(selectedDate)
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.fragmentContainer, almanacFragment)
                     .addToBackStack(null)
@@ -165,29 +178,41 @@ class DivinationDetailFragment : Fragment() {
             }
             
             // 显示加载状态
-            showLoading(true)
+            safeShowLoading(true)
             
             // 执行算命
             method?.let { method ->
-                DeepSeekService.performDivination(
+                safePerformDivination(
                     requireContext(),
                     method,
                     inputData
                 ) { result, error ->
-                    showLoading(false)
+                    // 检查Fragment是否仍然处于活跃状态，避免在Fragment销毁后更新UI
+                    if (!isActive || !isAdded) {
+                        return@safePerformDivination
+                    }
+                    
+                    try {
+                        safeShowLoading(false)
                     
                     if (error != null) {
-                        showError(error.message ?: "算命失败")
+                            safeShowError(error.message ?: "算命失败")
                     } else if (result != null) {
                         // 保存结果
                         LocalStorageService.saveResult(requireContext(), result)
                         
+                            // 确保Fragment仍处于活跃状态
+                            if (isActive && isAdded) {
                         // 显示结果
                         val resultFragment = DivinationResultFragment.newInstance(result.id)
                         parentFragmentManager.beginTransaction()
                             .replace(R.id.fragmentContainer, resultFragment)
                             .addToBackStack(null)
                             .commit()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // 捕获任何可能的异常，避免应用崩溃
                     }
                 }
             }
@@ -202,7 +227,7 @@ class DivinationDetailFragment : Fragment() {
             val fieldId = fieldView.tag as? String ?: continue
             
             val valueView = fieldView.findViewById<android.widget.EditText>(R.id.etFieldValue)
-            val spinnerView = fieldView.findViewById<android.widget.Spinner>(R.id.spinnerFieldValue)
+            val spinnerView = fieldView.findViewById<AutoCompleteTextView>(R.id.spinnerFieldValue)
             
             val field = method?.inputFields?.find { it.id == fieldId }
             
@@ -211,7 +236,7 @@ class DivinationDetailFragment : Fragment() {
                     data[fieldId] = valueView.text.toString()
                 }
                 4 -> {
-                    data[fieldId] = spinnerView.selectedItem.toString()
+                    data[fieldId] = spinnerView.text.toString()
                 }
             }
         }
@@ -268,17 +293,62 @@ class DivinationDetailFragment : Fragment() {
         timePickerDialog.show()
     }
     
+    // 添加安全的UI更新方法
+    private fun safeShowLoading(isLoading: Boolean) {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            binding.progressBar.isVisible = isLoading
+            binding.btnSubmit.isEnabled = !isLoading
+            
+            // 添加AI思考时间提示
+            if (isLoading) {
+                binding.tvLoadingHint.text = getString(R.string.ai_thinking_time, getMethodTimeout())
+                binding.tvLoadingHint.visibility = View.VISIBLE
+            } else {
+                binding.tvLoadingHint.visibility = View.GONE
+            }
+        } catch (e: Exception) {
+            // 忽略可能的异常
+        }
+    }
+    
+    // 获取当前算命方法的超时时间（秒）
+    private fun getMethodTimeout(): Int {
+        return when (methodId) {
+            "bazi" -> 60
+            "zhouyi", "ziwei", "qimen" -> 90
+            "tarot", "astrology", "dream" -> 80 
+            "face", "palmistry" -> 70
+            "numerology", "almanac" -> 90
+            else -> 60
+        }
+    }
+    
+    // 原始方法保留，但在内部使用安全版本
     private fun showLoading(isLoading: Boolean) {
-        binding.progressBar.isVisible = isLoading
-        binding.btnSubmit.isEnabled = !isLoading
+        safeShowLoading(isLoading)
+    }
+    
+    private fun safeShowError(message: String) {
+        if (!isActive || !isAdded) return
+        try {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            // 忽略可能的异常
+        }
     }
     
     private fun showError(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+        safeShowError(message)
     }
     
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        isActive = false
     }
 } 

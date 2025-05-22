@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="@color/divination_background"
     tools:context=".ui.ChineseAlmanacFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -15,37 +16,43 @@
 
         <TextView
             android:id="@+id/tvTitle"
+            style="@style/TitleTextStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="老黄历"
             android:textSize="24sp"
-            android:textStyle="bold"
             android:gravity="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.example.divination.ui.CustomCalendarView
-            android:id="@+id/calendarView"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardCalendar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            style="@style/ModernCard"
             android:layout_marginTop="8dp"
-            style="@style/CustomCalendarView"
-            android:datePickerMode="calendar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+            app:layout_constraintTop_toBottomOf="@+id/tvTitle">
 
-        <androidx.cardview.widget.CardView
+            <com.example.divination.ui.CustomCalendarView
+                android:id="@+id/calendarView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/CustomCalendarView"
+                android:datePickerMode="calendar" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
+            android:layout_marginTop="12dp"
+            style="@style/ModernCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/calendarView">
+            app:layout_constraintTop_toBottomOf="@+id/cardCalendar">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -59,6 +66,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="18sp"
                     android:textStyle="bold"
+                    android:textColor="@color/divination_text"
                     tools:text="2023年5月1日" />
 
                 <TextView
@@ -67,6 +75,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
+                    android:textColor="@color/neutral_gray"
                     tools:text="农历四月初一" />
 
                 <TextView
@@ -75,6 +84,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
+                    android:textColor="@color/neutral_gray"
                     tools:text="生肖：兔" />
 
                 <TextView
@@ -83,18 +93,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
+                    android:textColor="@color/neutral_gray"
                     tools:text="五行：木" />
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardGoodActivities"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
+            android:layout_marginTop="12dp"
+            style="@style/ModernCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardHeader">
@@ -109,7 +119,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="宜"
-                    android:textColor="#4CAF50"
+                    android:textColor="@color/success_color"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -119,17 +129,17 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textSize="16sp"
+                    android:textColor="@color/divination_text"
                     tools:text="祭祀 祈福 出行 嫁娶 开市" />
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardBadActivities"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
+            android:layout_marginTop="12dp"
+            style="@style/ModernCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardGoodActivities">
@@ -144,7 +154,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="忌"
-                    android:textColor="#F44336"
+                    android:textColor="@color/warning_color"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -154,17 +164,17 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textSize="16sp"
+                    android:textColor="@color/divination_text"
                     tools:text="诉讼 安葬 破土 动工 开张" />
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardDirection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
+            android:layout_marginTop="12dp"
+            style="@style/ModernCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardBadActivities">
@@ -180,7 +190,8 @@
                     android:layout_height="wrap_content"
                     android:text="方位"
                     android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:textColor="@color/divination_text" />
 
                 <GridLayout
                     android:id="@+id/gridDirection"
@@ -196,9 +207,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginEnd="4dp"
                         android:layout_marginBottom="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="东：吉"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -208,9 +220,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginEnd="4dp"
                         android:layout_marginBottom="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="南：凶"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -220,9 +233,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginEnd="4dp"
                         android:layout_marginBottom="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="西：吉"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -231,9 +245,10 @@
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginBottom="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="北：凶"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -243,9 +258,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginEnd="4dp"
                         android:layout_marginBottom="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="东北：吉"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -255,9 +271,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginEnd="4dp"
                         android:layout_marginBottom="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="东南：凶"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -266,9 +283,10 @@
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginEnd="4dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="西南：吉"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
 
                     <TextView
@@ -276,22 +294,22 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
-                        android:background="#E0E0E0"
+                        android:background="@color/card_border"
                         android:padding="8dp"
                         android:text="西北：凶"
+                        android:textColor="@color/divination_text"
                         android:textAlignment="center" />
                 </GridLayout>
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardOther"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
+            style="@style/ModernCard"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -309,7 +327,8 @@
                     android:layout_height="wrap_content"
                     android:text="其他信息"
                     android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:textColor="@color/divination_text" />
 
                 <TextView
                     android:id="@+id/tvGodOfBaby"
@@ -317,6 +336,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textSize="16sp"
+                    android:textColor="@color/divination_text"
                     tools:text="胎神：床头" />
 
                 <TextView
@@ -325,6 +345,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
+                    android:textColor="@color/divination_text"
                     tools:text="冲煞：冲蛇煞" />
 
                 <TextView
@@ -333,6 +354,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
+                    android:textColor="@color/divination_text"
                     tools:text="值年星：贪狼" />
 
                 <TextView
@@ -341,10 +363,11 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
+                    android:textColor="@color/divination_text"
                     tools:text="值日星：角木蛟" />
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView> 

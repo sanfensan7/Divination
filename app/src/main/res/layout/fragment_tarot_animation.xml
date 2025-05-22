@@ -4,26 +4,43 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/divination_background"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/tvQuestion"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="问题：你的未来如何？"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent" />
+        style="@style/ModernCard"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/tvSpreadName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="牌阵：三张牌阵"
-        android:textSize="14sp"
-        app:layout_constraintTop_toBottomOf="@id/tvQuestion" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvQuestion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="问题：你的未来如何？"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/divination_text"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvSpreadName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="牌阵：三张牌阵"
+                android:textSize="14sp"
+                android:textColor="@color/neutral_gray"
+                app:layout_constraintTop_toBottomOf="@id/tvQuestion" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <TextView
         android:id="@+id/tvInstructions"
@@ -34,7 +51,8 @@
         android:textAlignment="center"
         android:textSize="16sp"
         android:textStyle="italic"
-        app:layout_constraintTop_toBottomOf="@id/tvSpreadName" />
+        android:textColor="@color/divination_text"
+        app:layout_constraintTop_toBottomOf="@id/cardHeader" />
 
     <FrameLayout
         android:id="@+id/cardsContainer"
@@ -42,41 +60,54 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@id/tvCardDescription"
+        app:layout_constraintBottom_toTopOf="@id/cardDescription"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvInstructions" />
 
-    <TextView
-        android:id="@+id/tvCardDescription"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        style="@style/ModernCard"
         android:layout_marginBottom="8dp"
-        android:text=""
-        android:textAlignment="center"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toTopOf="@id/scrollView" />
+        app:layout_constraintBottom_toTopOf="@id/scrollView">
+
+        <TextView
+            android:id="@+id/tvCardDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textAlignment="center"
+            android:textSize="16sp"
+            android:padding="16dp"
+            android:textColor="@color/divination_text" />
+    </com.google.android.material.card.MaterialCardView>
         
-    <ScrollView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"
-        android:background="#EEEEEE"
+        android:layout_height="wrap_content"
+        style="@style/ModernCard"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHeight_min="80dp"
         app:layout_constraintHeight_max="120dp">
         
-        <TextView
-            android:id="@+id/tvCardsInfo"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:text=""
-            android:textSize="14sp"
-            android:visibility="gone" />
-    </ScrollView>
+            android:layout_height="match_parent">
+            
+            <TextView
+                android:id="@+id/tvCardsInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text=""
+                android:textSize="14sp"
+                android:textColor="@color/divination_text"
+                android:visibility="gone" />
+        </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
 
     <ProgressBar
         android:id="@+id/progressBar"

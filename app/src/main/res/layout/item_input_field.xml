@@ -12,31 +12,56 @@
         android:layout_height="wrap_content"
         android:textSize="14sp"
         android:textStyle="bold"
+        android:textColor="@color/divination_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="出生日期" />
 
-    <EditText
-        android:id="@+id/etFieldValue"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:ems="10"
-        android:hint="请输入"
-        android:inputType="text"
+        app:hintEnabled="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvFieldLabel" />
+        app:layout_constraintTop_toBottomOf="@+id/tvFieldLabel">
 
-    <Spinner
-        android:id="@+id/spinnerFieldValue"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etFieldValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="请输入"
+            android:inputType="text" 
+            android:fontFamily="sans-serif"
+            android:textSize="16sp"
+            android:lineSpacingExtra="4dp"
+            android:padding="12dp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/spinnerLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:visibility="gone"
+        app:hintEnabled="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvFieldLabel" />
+        app:layout_constraintTop_toBottomOf="@+id/tvFieldLabel">
+
+        <AutoCompleteTextView
+            android:id="@+id/spinnerFieldValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"
+            android:hint="请选择"
+            android:fontFamily="sans-serif"
+            android:textSize="16sp"
+            android:padding="12dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

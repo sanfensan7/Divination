@@ -28,6 +28,7 @@ class TarotCardView @JvmOverloads constructor(
     private val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.FILL
+        setShadowLayer(12f, 0f, 4f, Color.parseColor("#40000000"))
     }
     
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -53,6 +54,8 @@ class TarotCardView @JvmOverloads constructor(
     private var cardIcon: Drawable? = null
     private var isReversed: Boolean = false
     private var isBackFacing: Boolean = true
+    // 添加一个标记，记录卡片是否已经被翻转为正面
+    private var hasBeenFlipped: Boolean = false
     
     // 卡片背面图案
     private var cardBackDrawable: Drawable? = null
@@ -60,6 +63,9 @@ class TarotCardView @JvmOverloads constructor(
     init {
         // 初始化卡片背面图案
         cardBackDrawable = ContextCompat.getDrawable(context, R.drawable.ic_tarot_card_back)
+        
+        // 启用硬件加速以支持阴影绘制
+        setLayerType(LAYER_TYPE_HARDWARE, null)
     }
     
     /**
@@ -71,6 +77,7 @@ class TarotCardView @JvmOverloads constructor(
         this.cardIcon = icon
         this.isReversed = reversed
         this.isBackFacing = false
+        this.hasBeenFlipped = true
         invalidate()
     }
     
@@ -78,7 +85,19 @@ class TarotCardView @JvmOverloads constructor(
      * 设置是否显示卡片背面
      */
     fun setBackFacing(backFacing: Boolean) {
+        // 如果卡片已经翻转为正面，并且试图将其设置回背面，则忽略此操作
+        if (hasBeenFlipped && backFacing) {
+            return
+        }
+        
+        // 否则设置新状态
         this.isBackFacing = backFacing
+        
+        // 如果设置为正面，标记为已翻转
+        if (!backFacing) {
+            this.hasBeenFlipped = true
+        }
+        
         invalidate()
     }
     
@@ -86,8 +105,41 @@ class TarotCardView @JvmOverloads constructor(
      * 翻转卡片（正反面切换）
      */
     fun flip() {
+        // 如果卡片已经翻转为正面，不再允许翻回背面
+        if (hasBeenFlipped && !isBackFacing) {
+            return
+        }
+        
         isBackFacing = !isBackFacing
+        
+        // 如果翻转到正面，标记为已翻转
+        if (!isBackFacing) {
+            hasBeenFlipped = true
+        }
+        
+        // 确保先更新camera位置，实现3D效果
+        val centerX = width / 2f
+        val centerY = height / 2f
+        
+        // 设置相机距离，提供更好的3D透视效果
+        setCameraDistance(8000f)
+        
+        // 添加翻转动画时的阴影变化
+        if (isBackFacing) {
+            cardPaint.setShadowLayer(12f, 0f, 4f, Color.parseColor("#40000000"))
+        } else {
+            cardPaint.setShadowLayer(16f, 0f, 6f, Color.parseColor("#60000000"))
+        }
+        
         invalidate()
+    }
+    
+    /**
+     * 设置3D视图的相机距离
+     */
+    override fun setCameraDistance(distance: Float) {
+        // 调用View的setCameraDistance方法
+        super.setCameraDistance(distance)
     }
     
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

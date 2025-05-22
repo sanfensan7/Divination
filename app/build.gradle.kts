@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.divination"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -55,6 +55,10 @@ dependencies {
     
     // JSON解析
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // JavaMail API for Android
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
     
     // 图片加载
     implementation("com.github.bumptech.glide:glide:4.16.0")

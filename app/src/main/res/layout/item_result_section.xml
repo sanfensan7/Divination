@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    style="@style/ModernCard">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -15,11 +14,11 @@
 
         <TextView
             android:id="@+id/tvSectionTitle"
+            style="@style/TitleTextStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textSize="18sp"
-            android:textColor="#1565C0"
-            android:textStyle="bold"
+            android:textColor="@color/divination_primary"
             app:layout_constraintEnd_toStartOf="@+id/tvSectionScore"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -29,7 +28,7 @@
             android:id="@+id/tvSectionScore"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#FF5722"
+            android:textColor="@color/warning_color"
             android:textStyle="bold"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
@@ -42,8 +41,18 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:lineSpacingMultiplier="1.2"
+            android:lineSpacingMultiplier="1.5"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:textIsSelectable="true"
+            android:autoLink="all"
             android:textSize="15sp"
+            android:textColor="@color/divination_text"
+            android:minHeight="48dp"
+            android:text="@string/loading_content"
+            android:gravity="top|start"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvSectionTitle"

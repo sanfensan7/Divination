@@ -4,17 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/divination_background"
     tools:context=".ui.DivinationMethodsFragment">
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="@color/divination_card_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tabGravity="fill"
-        app:tabMode="fixed">
+        app:tabMode="fixed"
+        app:tabTextColor="@color/neutral_gray"
+        app:tabSelectedTextColor="@color/divination_primary"
+        app:tabIndicatorColor="@color/divination_primary">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"

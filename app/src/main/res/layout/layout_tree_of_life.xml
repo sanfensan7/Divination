@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp">
+    android:padding="8dp"
+    android:background="@color/divination_background">
 
     <!-- 三柱式布局 -->
     <LinearLayout
@@ -28,24 +29,28 @@
                 android:id="@+id/card1"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card2"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card3"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card4"
                 android:layout_width="75dp"
-                android:layout_height="110dp" />
+                android:layout_height="110dp"
+                android:background="@color/card_border" />
         </LinearLayout>
         
         <!-- 中间柱 -->
@@ -65,12 +70,14 @@
                 android:id="@+id/card5"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card6"
                 android:layout_width="75dp"
-                android:layout_height="110dp" />
+                android:layout_height="110dp"
+                android:background="@color/card_border" />
                 
             <View
                 android:layout_width="1dp"
@@ -90,24 +97,28 @@
                 android:id="@+id/card7"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card8"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card9"
                 android:layout_width="75dp"
                 android:layout_height="110dp"
-                android:layout_marginBottom="5dp" />
+                android:layout_marginBottom="5dp"
+                android:background="@color/card_border" />
                 
             <FrameLayout
                 android:id="@+id/card10"
                 android:layout_width="75dp"
-                android:layout_height="110dp" />
+                android:layout_height="110dp"
+                android:background="@color/card_border" />
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout> 

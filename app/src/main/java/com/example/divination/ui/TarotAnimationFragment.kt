@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,11 +30,17 @@ import com.example.divination.utils.DivinationMethodProvider
 import com.example.divination.utils.LocalStorageService
 import com.example.divination.view.TarotCardView
 import java.util.*
+import kotlin.math.min
+import android.widget.Toast
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import androidx.core.view.doOnLayout
+import com.example.divination.utils.safePerformDivination
 
 class TarotAnimationFragment : Fragment() {
 
     private var _binding: FragmentTarotAnimationBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding ?: throw IllegalStateException("Binding is null, Fragment可能已被销毁")
     
     private lateinit var methodId: String
     private lateinit var question: String
@@ -43,18 +50,17 @@ class TarotAnimationFragment : Fragment() {
     private var cardViews = mutableListOf<View>()
     private var cardNames = mutableListOf<String>()
     private var selectedCards = mutableListOf<Int>()
+    private var isActive = true // 跟踪Fragment是否处于活跃状态
     
     companion object {
         private const val ARG_METHOD_ID = "method_id"
         private const val ARG_QUESTION = "question"
-        private const val ARG_SPREAD = "spread"
         
         fun newInstance(methodId: String, inputData: Map<String, String>): TarotAnimationFragment {
             val fragment = TarotAnimationFragment()
             val args = Bundle()
             args.putString(ARG_METHOD_ID, methodId)
             args.putString(ARG_QUESTION, inputData["question"] ?: "")
-            args.putString(ARG_SPREAD, inputData["spread"] ?: "三张牌阵")
             fragment.arguments = args
             return fragment
         }
@@ -64,7 +70,7 @@ class TarotAnimationFragment : Fragment() {
         super.onCreate(savedInstanceState)
         methodId = arguments?.getString(ARG_METHOD_ID) ?: ""
         question = arguments?.getString(ARG_QUESTION) ?: ""
-        spread = arguments?.getString(ARG_SPREAD) ?: "三张牌阵"
+        spread = "三张牌阵" // 默认使用三张牌阵
         method = DivinationMethodProvider.getMethodById(methodId)
     }
 
@@ -126,12 +132,8 @@ class TarotAnimationFragment : Fragment() {
         binding.cardsContainer.removeAllViews()
         cardViews.clear()
         
-        when (spread) {
-            "三张牌阵" -> setupThreeCardSpread()
-            "凯尔特十字阵" -> setupCelticCrossSpread()
-            "生命之树阵" -> setupTreeOfLifeSpread()
-            else -> setupThreeCardSpread() // 默认使用三张牌阵
-        }
+        // 只使用三张牌阵
+        setupThreeCardSpread()
     }
     
     private fun setupThreeCardSpread() {
@@ -164,74 +166,6 @@ class TarotAnimationFragment : Fragment() {
         binding.cardsContainer.addView(container)
     }
     
-    private fun setupCelticCrossSpread() {
-        // 创建10张卡片的凯尔特十字牌阵
-        val crossLayout = createCelticCrossLayout()
-        binding.cardsContainer.addView(crossLayout)
-    }
-    
-    private fun createCelticCrossLayout(): View {
-        // 创建复杂的凯尔特十字牌阵布局
-        val layout = LayoutInflater.from(requireContext())
-            .inflate(R.layout.layout_celtic_cross, binding.cardsContainer, false)
-        
-        // 获取所有卡片视图并替换为TarotCardView
-        for (i in 1..10) {
-            val cardId = resources.getIdentifier("card$i", "id", requireContext().packageName)
-            val cardContainer = layout.findViewById<FrameLayout>(cardId)
-            
-            // 创建TarotCardView并添加到容器中
-            val cardView = com.example.divination.view.TarotCardView(requireContext())
-            cardView.layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            cardView.setBackFacing(true)
-            
-            // 清除容器中的ImageView并添加TarotCardView
-            cardContainer.removeAllViews()
-            cardContainer.addView(cardView)
-            
-            cardViews.add(cardView)
-        }
-        
-        return layout
-    }
-    
-    private fun setupTreeOfLifeSpread() {
-        // 创建10张卡片的生命之树牌阵
-        val treeLayout = createTreeOfLifeLayout()
-        binding.cardsContainer.addView(treeLayout)
-    }
-    
-    private fun createTreeOfLifeLayout(): View {
-        // 创建生命之树牌阵布局
-        val layout = LayoutInflater.from(requireContext())
-            .inflate(R.layout.layout_tree_of_life, binding.cardsContainer, false)
-        
-        // 获取所有卡片视图并替换为TarotCardView
-        for (i in 1..10) {
-            val cardId = resources.getIdentifier("card$i", "id", requireContext().packageName)
-            val cardContainer = layout.findViewById<FrameLayout>(cardId)
-            
-            // 创建TarotCardView并添加到容器中
-            val cardView = com.example.divination.view.TarotCardView(requireContext())
-            cardView.layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            cardView.setBackFacing(true)
-            
-            // 清除容器中的ImageView并添加TarotCardView
-            cardContainer.removeAllViews()
-            cardContainer.addView(cardView)
-            
-            cardViews.add(cardView)
-        }
-        
-        return layout
-    }
-    
     private fun createCardView(): View {
         // 使用自定义TarotCardView替代ImageView
         val cardView = com.example.divination.view.TarotCardView(requireContext())
@@ -250,10 +184,6 @@ class TarotAnimationFragment : Fragment() {
     }
     
     private fun startCardSelection() {
-        // 根据牌阵类型确定是否显示动画
-        when (spread) {
-            "三张牌阵" -> {
-                // 对三张牌阵保持原有的动画效果
                 binding.tvInstructions.text = "请稍候，正在洗牌..."
                 
                 // 洗牌动画
@@ -267,59 +197,6 @@ class TarotAnimationFragment : Fragment() {
                         cardView.tag = i
                         cardView.setOnClickListener { view ->
                             onCardSelected(view.tag as Int)
-                        }
-                    }
-                }
-            }
-            "凯尔特十字阵", "生命之树阵" -> {
-                // 凯尔特十字阵和生命之树阵直接显示结果，不展示动画
-                binding.tvInstructions.text = "塔罗牌解读完成，正在生成详细分析..."
-                
-                // 自动为所有卡片生成随机牌面
-                for (i in cardViews.indices) {
-                    // 获取随机卡片
-                    val randomCardIndex = Random().nextInt(cardNames.size)
-                    val cardName = cardNames[randomCardIndex]
-                    val meaningIndex = Random().nextInt(CARD_MEANINGS.size)
-                    val cardMeaning = CARD_MEANINGS[meaningIndex]
-                    
-                    // 设置牌面
-                    val cardView = cardViews[i]
-                    if (cardView is TarotCardView) {
-                        cardView.setCardInfo(
-                            name = cardName,
-                            meaning = cardMeaning,
-                            reversed = false  // 正位显示
-                        )
-                    }
-                    
-                    // 保存卡片信息
-                    cardView.tag = cardName
-                    selectedCards.add(i)
-                    
-                    // 更新底部状态显示
-                    showCardName(cardView, cardName)
-                }
-                
-                // 延迟后，请求AI解读
-                Handler(Looper.getMainLooper()).postDelayed({
-                    generateTarotReading()
-                }, 1500)
-            }
-            else -> {
-                // 默认使用动画
-                binding.tvInstructions.text = "请稍候，正在洗牌..."
-                
-                animateShuffling {
-                    binding.tvInstructions.text = "请在心中默念问题，然后点击任意一张牌..."
-                    
-                    for (i in cardViews.indices) {
-                        val cardView = cardViews[i]
-                        cardView.tag = i
-                        cardView.setOnClickListener { view ->
-                            onCardSelected(view.tag as Int)
-                        }
-                    }
                 }
             }
         }
@@ -334,6 +211,9 @@ class TarotAnimationFragment : Fragment() {
             cardView.alpha = 0.9f
             cardView.scaleX = 0.95f
             cardView.scaleY = 0.95f
+            
+            // 禁用点击事件，直到洗牌完成
+            cardView.isClickable = false
         }
         
         // 创建洗牌开始的集体动画
@@ -406,6 +286,11 @@ class TarotAnimationFragment : Fragment() {
                             pulseAnimSet.playTogether(pulseAnimations)
                             pulseAnimSet.addListener(object : android.animation.AnimatorListenerAdapter() {
                                 override fun onAnimationEnd(animation: android.animation.Animator) {
+                                    // 启用卡片点击事件
+                                    for (cardView in cardViews) {
+                                        cardView.isClickable = true
+                                    }
+                                    
                                     // 最终完成回调
                                     handler.postDelayed({
                                         onComplete()
@@ -460,137 +345,146 @@ class TarotAnimationFragment : Fragment() {
     }
     
     private fun onCardSelected(position: Int) {
-        // 防止重复选择
-        if (selectedCards.contains(position)) return
-        
-        val cardView = cardViews[position]
-        cardView.isClickable = false
-        selectedCards.add(position)
-        
-        // 翻转动画
-        flipCard(cardView) {
-            // 查看是否选择了足够的卡片
-            checkCompletedSelection()
+        try {
+            // 防止重复选择
+            if (selectedCards.contains(position)) return
+            
+            // 确保位置有效
+            if (position < 0 || position >= cardViews.size) {
+                Log.e("TarotAnimation", "无效的卡片位置: $position")
+                return
+            }
+            
+            val cardView = cardViews[position]
+            
+            // 添加选中前的小动画效果
+            val pulseAnim = ObjectAnimator.ofFloat(cardView, "scaleX", 1f, 1.1f, 1f)
+            val pulseAnimY = ObjectAnimator.ofFloat(cardView, "scaleY", 1f, 1.1f, 1f)
+            pulseAnim.duration = 200
+            pulseAnimY.duration = 200
+            
+            val animSet = AnimatorSet()
+            animSet.playTogether(pulseAnim, pulseAnimY)
+            animSet.addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    // 动画结束后禁用点击
+                    cardView.isClickable = false
+                    selectedCards.add(position)
+                    
+                    // 翻转动画
+                    flipCard(cardView) {
+                        // 查看是否选择了足够的卡片
+                        checkCompletedSelection()
+                    }
+                }
+            })
+            animSet.start()
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "卡片选择异常", e)
+            Toast.makeText(requireContext(), "卡片选择出错", Toast.LENGTH_SHORT).show()
         }
     }
     
     private fun flipCard(cardView: View, onComplete: () -> Unit) {
-        // 获取随机卡片
-        val randomCardIndex = Random().nextInt(cardNames.size)
-        val cardName = cardNames[randomCardIndex]
-        val isReversed = false // 始终为正位，不再使用随机逻辑
-        
-        // 随机选择牌面含义
-        val meaningIndex = Random().nextInt(CARD_MEANINGS.size)
-        val cardMeaning = CARD_MEANINGS[meaningIndex]
-        
-        // 获取卡片在屏幕中的位置
-        val cardLocation = IntArray(2)
-        cardView.getLocationOnScreen(cardLocation)
-        
-        // 获取牌堆位置（假设在屏幕中心）
-        val centerX = binding.root.width / 2
-        val centerY = binding.root.height / 2
-        
-        // 计算移动距离
-        val moveX = cardLocation[0] - centerX + cardView.width / 2
-        val moveY = cardLocation[1] - centerY + cardView.height / 2
-        
-        // 创建移动动画（从牌堆到目标位置）
-        val translateX = ObjectAnimator.ofFloat(cardView, "translationX", -moveX.toFloat(), 0f)
-        val translateY = ObjectAnimator.ofFloat(cardView, "translationY", -moveY.toFloat(), 0f)
-        val translateAnimSet = AnimatorSet()
-        translateAnimSet.playTogether(translateX, translateY)
-        translateAnimSet.duration = 500
-        translateAnimSet.interpolator = DecelerateInterpolator()
-        
-        // 创建3D翻转动画
-        val flipOutAnimator = ObjectAnimator.ofFloat(cardView, "rotationY", 0f, 90f)
-        flipOutAnimator.duration = 300
-        flipOutAnimator.interpolator = DecelerateInterpolator()
-        
-        val flipInAnimator = ObjectAnimator.ofFloat(cardView, "rotationY", -90f, 0f)
-        flipInAnimator.duration = 300
-        flipInAnimator.interpolator = DecelerateInterpolator()
-        
-        // 添加视觉效果（缩放和亮度变化）
-        val scaleXOut = ObjectAnimator.ofFloat(cardView, "scaleX", 1f, 1.05f)
-        val scaleYOut = ObjectAnimator.ofFloat(cardView, "scaleY", 1f, 1.05f)
-        scaleXOut.duration = 300
-        scaleYOut.duration = 300
-        
-        val scaleXIn = ObjectAnimator.ofFloat(cardView, "scaleX", 1.05f, 1f)
-        val scaleYIn = ObjectAnimator.ofFloat(cardView, "scaleY", 1.05f, 1f)
-        scaleXIn.duration = 300
-        scaleYIn.duration = 300
-        
-        // 设置卡片选中效果
-        val selectedAlpha = ObjectAnimator.ofFloat(cardView, "alpha", 1f, 0.9f, 1f)
-        selectedAlpha.duration = 600
-        
-        // 创建完整动画序列
-        val fullAnimSet = AnimatorSet()
-        
-        // 首先执行移动动画
-        translateAnimSet.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                // 移动结束后执行翻转动画
-                flipOutAnimator.start()
-            }
-        })
-        
-        // 在翻转一半时切换卡面
-        flipOutAnimator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                // 翻到一半时，切换卡面
-                if (cardView is TarotCardView) {
-                    // 如果是TarotCardView，直接设置卡片信息
-                    cardView.setCardInfo(
-                        name = cardName,
-                        meaning = cardMeaning,
-                        reversed = isReversed
-                    )
-                } else {
-                    // 对于普通View，设置背景图片
-                    val resourceId = getRandomCardResourceId(cardName)
-                    if (cardView is ImageView) {
-                        cardView.setImageResource(resourceId)
-                    }
-                }
+        try {
+            // 获取随机卡片
+            val randomCardIndex = Random().nextInt(cardNames.size)
+            val cardName = cardNames[randomCardIndex]
+            val isReversed = false // 始终为正位，不再使用随机逻辑
+            
+            // 随机选择牌面含义
+            val meaningIndex = min(Random().nextInt(CARD_MEANINGS.size), CARD_MEANINGS.size - 1)
+            val cardMeaning = CARD_MEANINGS[meaningIndex]
+            
+            // 设置卡片标记
+            cardView.tag = cardName
+            
+            // 如果是TarotCardView，使用其翻转方法
+            if (cardView is TarotCardView) {
+                // 设置卡片信息
+                cardView.setCardInfo(cardName, cardMeaning, null, isReversed)
                 
-                // 显示卡片名称
-                showCardName(cardView, cardName)
+                // 先禁用卡片的点击
+                cardView.isClickable = false
                 
-                // 开始翻转回来的动画
-                flipInAnimator.start()
-            }
-        })
-        
-        // 翻转完成后执行后续动作
-        flipInAnimator.addListener(object : android.animation.AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: android.animation.Animator) {
-                // 添加卡片放大缩小的视觉效果
-                val finalAnimation = AnimatorSet()
-                finalAnimation.playTogether(scaleXOut, scaleYOut, selectedAlpha)
+                // 执行翻转动画
+                val flipAnim = ObjectAnimator.ofFloat(cardView, "rotationY", 0f, 90f)
+                flipAnim.duration = 300
+                flipAnim.interpolator = AccelerateDecelerateInterpolator()
                 
-                finalAnimation.addListener(object : android.animation.AnimatorListenerAdapter() {
+                flipAnim.addListener(object : android.animation.AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: android.animation.Animator) {
-                        // 恢复原始大小
-                        val scaleNormalizer = AnimatorSet()
-                        scaleNormalizer.playTogether(scaleXIn, scaleYIn)
-                        scaleNormalizer.start()
+                        // 翻转到90度时，卡片已经看不见了，这时翻转卡片的正反面
+                        cardView.setBackFacing(false) // 直接设置为正面，不使用flip()
                         
-                        // 完成回调
-                        onComplete()
+                        // 继续翻转到360度而不是180度，这样卡片方向就是正确的
+                        val flipBackAnim = ObjectAnimator.ofFloat(cardView, "rotationY", 90f, 360f)
+                        flipBackAnim.duration = 300
+                        flipBackAnim.interpolator = DecelerateInterpolator()
+                        
+                        flipBackAnim.addListener(object : android.animation.AnimatorListenerAdapter() {
+                            override fun onAnimationEnd(animation: android.animation.Animator) {
+                                // 显示卡片名称
+                                showCardName(cardView, cardName)
+                                
+                                // 动画完成后重置rotationY为0以避免累积旋转
+                                cardView.rotationY = 0f
+                                
+                                // 确保还是显示正面
+                                cardView.setBackFacing(false)
+                                
+                                // 完成回调
+                                onComplete()
+                            }
+                        })
+                        
+                        flipBackAnim.start()
                     }
                 })
                 
-                finalAnimation.start()
+                flipAnim.start()
+            } else {
+                // 对于非TarotCardView，使用旋转动画模拟翻转
+                val rotation = ObjectAnimator.ofFloat(cardView, "rotationY", 0f, 90f)
+                rotation.duration = 300
+                rotation.interpolator = AccelerateDecelerateInterpolator()
+                
+                rotation.addListener(object : android.animation.AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: android.animation.Animator) {
+                        // 在旋转到90度时更新卡面
+                        if (cardView is ImageView) {
+                            cardView.setImageResource(getRandomCardResourceId(cardName))
+                        }
+                        
+                        // 继续旋转到360度而不是180度，保证卡片正面朝上
+                        val rotation2 = ObjectAnimator.ofFloat(cardView, "rotationY", 90f, 360f)
+                        rotation2.duration = 300
+                        rotation2.interpolator = DecelerateInterpolator()
+                        
+                        rotation2.addListener(object : android.animation.AnimatorListenerAdapter() {
+                            override fun onAnimationEnd(animation: android.animation.Animator) {
+                                // 显示卡片名称
+                                showCardName(cardView, cardName)
+                                
+                                // 动画完成后重置rotationY为0以避免累积旋转
+                                cardView.rotationY = 0f
+                                
+                                // 完成回调
+                                onComplete()
+                            }
+                        })
+                        
+                        rotation2.start()
+                    }
+                })
+                
+                rotation.start()
             }
-        })
-        
-        // 启动整个动画序列
-        translateAnimSet.start()
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "卡片翻转异常", e)
+            // 确保回调被调用，避免流程中断
+            onComplete()
+        }
     }
     
     // 塔罗牌牌面含义示例
@@ -702,35 +596,27 @@ class TarotAnimationFragment : Fragment() {
     }
     
     private fun showCardName(cardView: View, cardName: String) {
-        // 显示卡片名称
-        val position = cardViews.indexOf(cardView)
-        
-        // 获取牌位标题
-        val title = getCardPositionTitle(position)
-        
-        // 更新底部状态栏显示最近翻开的牌
-        binding.tvCardDescription.text = "抽到的牌: $cardName ($title)"
-        
-        // 更新已抽到的牌的列表显示
-        updateCardListDisplay()
+        try {
+            // 显示卡片名称
+            val position = cardViews.indexOf(cardView)
+            
+            // 获取牌位标题
+            val title = getCardPositionTitle(position)
+            
+            // 更新底部状态栏显示最近翻开的牌
+            binding.tvCardDescription.text = "抽到的牌: $cardName ($title)"
+            
+            // 更新已抽到的牌的列表显示
+            updateCardListDisplay()
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "显示卡片名称异常", e)
+        }
     }
     
     private fun getCardPositionTitle(position: Int): String {
-        return when (spread) {
-            "三张牌阵" -> {
+        // 只保留三张牌阵的位置标题
                 val titles = listOf("过去", "现在", "未来")
-                if (position < titles.size) titles[position] else ""
-            }
-            "凯尔特十字阵" -> {
-                val titles = listOf("现状", "挑战", "过去", "未来", "上方", "下方", "建议", "外在影响", "希望与恐惧", "最终结果")
-                if (position < titles.size) titles[position] else ""
-            }
-            "生命之树阵" -> {
-                val titles = listOf("精神", "智慧", "理解", "慈悲", "力量", "美", "胜利", "荣耀", "基础", "物质")
-                if (position < titles.size) titles[position] else ""
-            }
-            else -> ""
-        }
+        return if (position < titles.size) titles[position] else ""
     }
     
     private fun updateCardListDisplay() {
@@ -755,59 +641,101 @@ class TarotAnimationFragment : Fragment() {
     }
     
     private fun checkCompletedSelection() {
-        // 检查是否已选择足够的卡片
-        val requiredCards = when (spread) {
-            "三张牌阵" -> 3
-            "凯尔特十字阵" -> 10
-            "生命之树阵" -> 10
-            else -> 3
-        }
-        
-        if (selectedCards.size >= requiredCards) {
-            // 禁用所有卡片点击
-            for (cardView in cardViews) {
-                cardView.isClickable = false
+        try {
+            // 三张牌阵需要3张卡片
+            val requiredCards = 3
+            
+            if (selectedCards.size >= requiredCards) {
+                // 禁用所有卡片点击
+                for (cardView in cardViews) {
+                    cardView.isClickable = false
+                }
+                
+                // 显示完成消息
+                binding.tvInstructions.text = "塔罗牌解读完成，正在生成详细分析..."
+                binding.tvInstructions.text = getString(R.string.ai_thinking_time, 80)
+                
+                // 延迟后，请求AI解读
+                Handler(Looper.getMainLooper()).postDelayed({
+                    generateTarotReading()
+                }, 1500)
+            } else {
+                // 更新提示信息
+                binding.tvInstructions.text = "请继续选择剩余的卡片...(${selectedCards.size}/$requiredCards)"
             }
-            
-            // 显示完成消息
-            binding.tvInstructions.text = "塔罗牌解读完成，正在生成详细分析..."
-            
-            // 延迟后，请求AI解读
-            Handler(Looper.getMainLooper()).postDelayed({
-                generateTarotReading()
-            }, 1500)
-        } else {
-            // 更新提示信息
-            binding.tvInstructions.text = "请继续选择剩余的卡片...(${selectedCards.size}/$requiredCards)"
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "检查卡片选择完成异常", e)
+            // 如果出错，尝试直接生成解读
+            binding.tvInstructions.text = "处理卡片时出错，尝试生成解读..."
+            generateTarotReading()
         }
     }
     
     private fun generateTarotReading() {
-        // 准备输入数据
-        val inputData = mapOf(
-            "question" to question,
-            "spread" to spread,
-            "cards" to getSelectedCardNames()
-        )
-        
-        // 显示加载状态
-        binding.progressBar.visibility = View.VISIBLE
-        
-        // 调用AI服务获取解读
-        DeepSeekService.performDivination(
-            requireContext(),
-            method!!,
-            inputData
-        ) { result, error ->
-            binding.progressBar.visibility = View.GONE
+        try {
+            // 准备输入数据
+            val inputData = mapOf(
+                "question" to question,
+                "spread" to spread,
+                "cards" to getSelectedCardNames()
+            )
             
-            if (error != null) {
-                binding.tvInstructions.text = "解读失败：${error.message}"
-            } else if (result != null) {
-                // 保存结果并显示
-                LocalStorageService.saveResult(requireContext(), result)
-                showResult(result)
+            // 显示加载状态
+            safeSetViewVisibility(binding.progressBar, View.VISIBLE)
+            
+            // 添加AI思考时间提示
+            safeSetText(binding.tvInstructions, getString(R.string.ai_thinking_time, 80))
+            
+            // 调用AI服务获取解读
+            safePerformDivination(
+                requireContext(),
+                method!!,
+                inputData
+            ) { result, error ->
+                // 首先检查Fragment是否仍然处于活跃状态
+                if (!isActive || !isAdded || _binding == null) return@safePerformDivination
+                
+                try {
+                    safeSetViewVisibility(binding.progressBar, View.GONE)
+                    
+                    if (error != null) {
+                        safeSetText(binding.tvInstructions, "解读失败：${error.message?.take(50) ?: "未知错误"}")
+                    } else if (result != null) {
+                        // 保存结果并显示
+                        LocalStorageService.saveResult(requireContext(), result)
+                        showResult(result)
+                    } else {
+                        safeSetText(binding.tvInstructions, "解读失败：未知错误")
+                    }
+                } catch (e: Exception) {
+                    Log.e("TarotAnimation", "解读回调处理异常", e)
+                    safeSetViewVisibility(binding.progressBar, View.GONE)
+                    safeSetText(binding.tvInstructions, "解读处理出错：${e.message?.take(50) ?: "未知错误"}")
+                }
             }
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "生成解读异常", e)
+            safeSetViewVisibility(binding.progressBar, View.GONE)
+            safeSetText(binding.tvInstructions, "生成解读出错：${e.message?.take(50) ?: "未知错误"}")
+        }
+    }
+    
+    // 添加安全的UI更新方法
+    private fun safeSetViewVisibility(view: View?, visibility: Int) {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            view?.visibility = visibility
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "设置视图可见性异常", e)
+        }
+    }
+    
+    private fun safeSetText(view: TextView?, text: CharSequence) {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            view?.text = text
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "设置文本异常", e)
         }
     }
     
@@ -815,27 +743,60 @@ class TarotAnimationFragment : Fragment() {
         // 获取已选择的卡片名称
         val selectedCardNames = mutableListOf<String>()
         
-        for (i in selectedCards.indices) {
-            val position = selectedCards[i]
-            val cardView = cardViews[position]
-            val cardName = cardView.tag as? String ?: "未知"
-            selectedCardNames.add(cardName)
+        try {
+            for (i in selectedCards.indices) {
+                val position = selectedCards[i]
+                if (position >= 0 && position < cardViews.size) {
+                    val cardView = cardViews[position]
+                    val cardName = cardView.tag as? String ?: "未知牌"
+                    selectedCardNames.add(cardName)
+                } else {
+                    selectedCardNames.add("未知牌")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "获取卡片名称异常", e)
+            // 添加一个默认值避免返回空字符串
+            if (selectedCardNames.isEmpty()) {
+                selectedCardNames.add("塔罗牌")
+            }
         }
         
         return selectedCardNames.joinToString(", ")
     }
     
     private fun showResult(result: DivinationResult) {
-        // 跳转到结果页面
-        val resultFragment = DivinationResultFragment.newInstance(result.id)
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, resultFragment)
-            .addToBackStack(null)
-            .commit()
+        if (!isActive || !isAdded) return
+        
+        try {
+            // 跳转到结果页面
+            val resultFragment = DivinationResultFragment.newInstance(result.id)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, resultFragment)
+                .addToBackStack(null)
+                .commit()
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "显示结果异常", e)
+            safeShowToast("显示结果出错：${e.message?.take(50) ?: "未知错误"}")
+        }
+    }
+    
+    private fun safeShowToast(message: String) {
+        if (!isActive || !isAdded) return
+        try {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "显示Toast异常", e)
+        }
     }
     
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        isActive = false
     }
 } 

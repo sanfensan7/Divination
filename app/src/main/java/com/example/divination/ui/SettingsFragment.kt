@@ -8,8 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.example.divination.BuildConfig
+import com.example.divination.R
 import com.example.divination.databinding.FragmentSettingsBinding
+import com.example.divination.utils.AppConfig
 import com.example.divination.utils.LocalStorageService
 
 class SettingsFragment : Fragment() {
@@ -51,24 +52,18 @@ class SettingsFragment : Fragment() {
     
     private fun setupVersionInfo() {
         // 设置版本信息
-        binding.tvVersion.text = "版本：${BuildConfig.VERSION_NAME}"
+        binding.tvVersion.text = getString(com.example.divination.R.string.version, 
+            AppConfig.getVersionName(requireContext()))
     }
     
     private fun setupFeedbackButton() {
         // 反馈按钮点击事件
         binding.btnFeedback.setOnClickListener {
-            // 打开邮件应用发送反馈
-            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("mailto:feedback@example.com")
-                putExtra(Intent.EXTRA_SUBJECT, "算命应用反馈")
-                putExtra(Intent.EXTRA_TEXT, "请在此处描述您的问题或建议...")
-            }
-            
-            if (intent.resolveActivity(requireActivity().packageManager) != null) {
-                startActivity(intent)
-            } else {
-                Toast.makeText(requireContext(), "未找到邮件应用", Toast.LENGTH_SHORT).show()
-            }
+            // 跳转到反馈表单页面
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, FeedbackFragment())
+                .addToBackStack(null)
+                .commit()
         }
     }
     
@@ -87,7 +82,8 @@ class SettingsFragment : Fragment() {
             // 显示关于对话框
             val aboutDialog = android.app.AlertDialog.Builder(requireContext())
                 .setTitle("关于")
-                .setMessage("智能算命应用\n版本：${BuildConfig.VERSION_NAME}\n\n本应用基于DeepSeek AI技术，集成了中外多种主流算命方法，为用户提供专业的命理解析服务。\n\n© 2025 三分三")
+                .setMessage(getString(com.example.divination.R.string.about_content, 
+                    AppConfig.getVersionName(requireContext())))
                 .setPositiveButton("确定", null)
                 .create()
             

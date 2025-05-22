@@ -19,7 +19,6 @@ import javax.net.ssl.HttpsURLConnection
 import kotlin.concurrent.thread
 import kotlin.math.max
 import java.util.regex.Pattern
-import java.util.Calendar
 
 /**
  * DeepSeek API服务类
@@ -28,11 +27,6 @@ object DeepSeekService {
     
     private const val TAG = "DeepSeekService"
     private const val API_URL = "https://api.deepseek.com/v1/chat/completions"  // DeepSeek API地址
-    
-    // 公开的方法，供外部调用生成八字命理备用响应
-    fun simulateBaziResponseForFallback(prompt: String): String {
-        return simulateBaziResponse(prompt)
-    }
     
     // 从本地存储获取API密钥
     private fun getApiKey(context: Context): String {
@@ -97,9 +91,7 @@ object DeepSeekService {
                 try {
                     // 尝试发送API请求
                     showToast(context, "正在连接AI服务...")
-                    Log.d(TAG, "开始调用DeepSeek API，methodId: ${method.id}")
-                    val response = sendRequest(context, apiKey, prompt, method.id)
-                    Log.d(TAG, "API调用成功，返回数据长度: ${response.length}字符")
+                    val response = sendRequest(context, apiKey, prompt)
                     
                     // 解析响应
                     val result = parseResponse(method, inputData, response)
@@ -109,7 +101,7 @@ object DeepSeekService {
                         callback(result, null)
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "API调用失败: ${e.javaClass.simpleName}: ${e.message}", e)
+                    Log.e(TAG, "API调用失败", e)
                     
                     // 使用模拟响应作为备选
                     showToast(context, "AI服务调用失败：${e.message?.take(50)}...，使用本地模拟模式")
@@ -404,115 +396,59 @@ object DeepSeekService {
     /**
      * 发送API请求
      */
-    private fun sendRequest(context: Context, apiKey: String, prompt: String, methodId: String = ""): String {
-        // 创建连接
+    private fun sendRequest(context: Context, apiKey: String, prompt: String): String {
+        // 创建DeepSeek API请求
         val url = URL(API_URL)
         val connection = url.openConnection() as HttpsURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Authorization", "Bearer $apiKey")
+        connection.doOutput = true
         
         try {
-            Log.d(TAG, "开始API请求，methodId: $methodId, URL: $API_URL")
+            // 构建请求体
+            val requestBody = JSONObject()
+            requestBody.put("model", "deepseek-chat") // 使用原始模型名称
             
-            // 设置连接属性
-            connection.requestMethod = "POST"
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("Authorization", "Bearer $apiKey")
-            connection.doOutput = true
+            val messagesArray = JSONArray()
+            val messageObject = JSONObject()
+            messageObject.put("role", "user")
+            messageObject.put("content", prompt)
+            messagesArray.put(messageObject)
             
-            // 根据不同的占卜方法设置不同的超时时间
-            val connectTimeout = when (methodId) {
-                "bazi" -> 60000 // 八字占卜连接超时60秒（原30000）
-                "zhouyi" -> 40000 // 周易占卜连接超时40秒（原25000）
-                "ziwei" -> 40000 // 紫微斗数连接超时40秒（原25000）
-                "tarot" -> 35000 // 塔罗牌连接超时35秒（原20000）
-                "astrology" -> 35000 // 占星连接超时35秒（原20000）
-                "dream" -> 35000 // 解梦连接超时35秒（原20000）
-                "face", "palmistry" -> 30000 // 面相、手相连接超时30秒（原15000）
-                "numerology" -> 40000 // 数字命理连接超时40秒（原30000）
-                else -> 30000 // 其他方法连接超时30秒（原15000）
-            }
+            requestBody.put("messages", messagesArray)
+            requestBody.put("temperature", 0.7)
+            requestBody.put("max_tokens", 2000)
             
-            val readTimeout = when (methodId) {
-                "bazi" -> 120000 // 八字占卜读取超时120秒（原60000）
-                "zhouyi" -> 80000 // 周易占卜读取超时80秒（原50000）
-                "ziwei" -> 80000 // 紫微斗数读取超时80秒（原50000）
-                "tarot" -> 75000 // 塔罗牌读取超时75秒（原45000）
-                "astrology" -> 75000 // 占星读取超时75秒（原45000）
-                "dream" -> 75000 // 解梦读取超时75秒（原45000）
-                "face", "palmistry" -> 65000 // 面相、手相读取超时65秒（原40000）
-                "numerology" -> 85000 // 数字命理读取超时85秒（原65000）
-                else -> 60000 // 其他方法读取超时60秒（原35000）
-            }
+            // 发送请求
+            val outputStream = DataOutputStream(connection.outputStream)
+            outputStream.write(requestBody.toString().toByteArray(StandardCharsets.UTF_8))
+            outputStream.flush()
+            outputStream.close()
             
-            Log.d(TAG, "设置API超时参数 - methodId: $methodId, 连接超时: ${connectTimeout}ms, 读取超时: ${readTimeout}ms")
-            
-            // 设置连接和读取超时
-            connection.connectTimeout = connectTimeout
-            connection.readTimeout = readTimeout
-            
-            // 创建请求体
-            val requestBody = JSONObject().apply {
-                put("model", "deepseek-chat")
-                put("messages", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("role", "user")
-                        put("content", prompt)
-                    })
-                })
-                
-                // 增强DeepSeek API参数，提高推理稳定性和速度
-                put("max_tokens", 4000)
-                put("temperature", 0.7)
-                put("top_p", 0.85)
-                put("frequency_penalty", 0.2)
-                put("presence_penalty", 0.1)
-                put("stream", false)
-            }
-            
-            // 记录请求详情
-            Log.d(TAG, "API请求参数: ${requestBody.toString().take(200)}...")
-            
-            if (methodId == "bazi") {
-                Log.d(TAG, "八字命理API请求正在发送，完整提示词长度: ${prompt.length}字符")
-                Log.d(TAG, "八字命理API提示词前300字符: ${prompt.take(300)}...")
-            }
-            
-            // 写入请求体
-            DataOutputStream(connection.outputStream).use { it.write(requestBody.toString().toByteArray()) }
-            
-            // 检查响应码
+            // 获取响应
             val responseCode = connection.responseCode
-            Log.d(TAG, "API响应码: $responseCode")
-            
-            if (methodId == "bazi") {
-                Log.d(TAG, "八字命理API响应码: $responseCode")
-            }
-            
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                val errorMessage = BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
-                Log.e(TAG, "API错误: $responseCode, $errorMessage")
-                
-                if (methodId == "bazi") {
-                    Log.e(TAG, "八字命理API调用失败: $responseCode, 错误详情: $errorMessage")
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val inputStream = connection.inputStream
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val response = StringBuilder()
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    response.append(line)
                 }
+                reader.close()
                 
-                throw Exception("API调用失败 (HTTP $responseCode): ${getApiErrorMessage(errorMessage)}")
+                // 解析JSON响应
+                val jsonResponse = JSONObject(response.toString())
+                return jsonResponse.getJSONArray("choices")
+                    .getJSONObject(0)
+                    .getJSONObject("message")
+                    .getString("content")
+                
+            } else {
+                // 如果API调用失败，抛出异常
+                throw Exception("API调用失败，状态码：$responseCode")
             }
-            
-            // 读取响应
-            val response = BufferedReader(InputStreamReader(connection.inputStream, StandardCharsets.UTF_8)).use { it.readText() }
-            Log.d(TAG, "API响应内容前200字符: ${response.take(200)}...")
-            
-            if (methodId == "bazi") {
-                Log.d(TAG, "八字命理API响应成功，响应长度: ${response.length}字符")
-                Log.d(TAG, "八字命理API响应内容前300字符: ${response.take(300)}...")
-            }
-            
-            return response
-        } catch (e: Exception) {
-            if (methodId == "bazi") {
-                Log.e(TAG, "八字命理API请求发生异常: ${e.javaClass.simpleName}: ${e.message}", e)
-            }
-            throw e
         } finally {
             connection.disconnect()
         }
@@ -522,31 +458,351 @@ object DeepSeekService {
      * 模拟API响应（仅在实际API调用失败时使用）
      */
     private fun simulateResponse(prompt: String): String {
-        // 获取传入提示词中的methodId或method.name
-        val methodId = when {
-            prompt.contains("methodId=bazi") || prompt.contains("method.id=bazi") -> "bazi"
-            prompt.contains("methodId=zhouyi") || prompt.contains("method.id=zhouyi") -> "zhouyi"
-            // 其他方法...
-            else -> null
+        try {
+        // 检查是否是占星学问题，如果是则使用专门的占星学模拟响应
+        if (prompt.contains("星盘") || prompt.contains("占星") || prompt.contains("星座") || 
+            prompt.contains("行星") || prompt.contains("上升") || prompt.contains("本命盘")) {
+            return simulateAstrologyResponse(prompt)
         }
         
-        // 优先判断methodId，确保八字命理一定会使用专门的实现
-        return when {
-            methodId == "bazi" || prompt.contains("八字命理") || prompt.contains("生辰八字") -> {
-                Log.d("DeepSeekService", "正在使用八字命理备用响应")
-                simulateBaziResponse(prompt)
+        // 检查是否是塔罗牌问题，如果是则使用专门的塔罗牌模拟响应
+        if (prompt.contains("塔罗") || prompt.contains("tarot") || prompt.contains("牌阵")) {
+            return simulateTarotResponse(prompt)
+        }
+        
+        // 检查是否是解梦问题，如果是则使用专门的解梦模拟响应
+        if (prompt.contains("周公解梦") || prompt.contains("解梦") || prompt.contains("梦境") || 
+            prompt.contains("梦到") || prompt.contains("梦见")) {
+            return simulateDreamResponse(prompt)
+        }
+        
+        // 检查是否是周易卦象问题，如果是则使用专门的周易模拟响应
+        if (prompt.contains("周易") || prompt.contains("卦象") || prompt.contains("易经") ||
+                prompt.contains("六十四卦") || prompt.contains("卜卦") || prompt.contains("zhouyi")) {
+                // 记录日志，便于调试
+                Log.d(TAG, "检测到周易卦象问题，调用专门的模拟函数")
+                val zhouYiResponse = simulateZhouYiResponse(prompt)
+                
+                // 检查返回内容是否为空或过短
+                if (zhouYiResponse.isBlank() || zhouYiResponse.length < 100) {
+                    Log.w(TAG, "周易模拟响应内容为空或过短，使用默认内容")
+                    return """
+                        【卦象】
+                        本次预测得到乾卦。乾卦象征纯阳刚健，代表强大的创造力和领导力。
+                        
+                        【卦辞解析】
+                        《周易》中乾卦的卦辞是："元亨利贞"。
+                        
+                        这个卦辞的现代解释是：象征着宏图大展、事业兴旺的征兆。建议保持坚韧不拔的态度，遵循正道，自然能获得成功。
+                        
+                        【情境解读】
+                        针对您的问题，乾卦给出的指引是：当前局面看似复杂，但实际上正在朝着有利的方向发展。这个卦象建议您保持耐心和信心，不要被表面的困难所干扰。坚持正确的方向，最终会看到积极的结果。
+                        
+                        《易经》有云："天行健，君子以自强不息"，这一古老智慧在您当前的情况中尤为适用。
+                        
+                        【建议】
+                        基于乾卦的启示，给您的具体建议是：
+                        
+                        1. 保持内心的平静和耐心，不要被短期的波动所干扰。
+                        2. 审慎决策，避免冲动行事，确保每一步都经过深思熟虑。
+                        3. 寻求值得信任的人的建议，但最终的决定应该由自己做出。
+                        
+                        【总结】
+                        简单来说，您现在正处于充满活力和潜力的阶段，要保持坚定不移的毅力和自信心。只要按照正确的方向努力，一定能取得成功。说白了，就是坚持做对的事，不要轻易放弃，好运气自然会来敲门。
+                    """
+                }
+                
+                return zhouYiResponse
+        }
+        
+        // 生成一个随机响应，使每次结果不同
+        val currentTime = System.currentTimeMillis()
+        val random = Random(currentTime)
+        
+        // 提取用户输入的关键信息
+        val birthDateMatch = "出生日期：([^\\n]+)".toRegex().find(prompt)
+        val birthTimeMatch = "出生时间：([^\\n]+)|出生时辰：([^\\n]+)".toRegex().find(prompt)
+        val genderMatch = "性别：([^\\n]+)".toRegex().find(prompt)
+        val questionMatch = "预测问题：([^\\n]+)|咨询问题：([^\\n]+)".toRegex().find(prompt)
+        val fullNameMatch = "全名：([^\\n]+)".toRegex().find(prompt)
+        
+        val birthDate = birthDateMatch?.groupValues?.get(1)?.trim()
+        val birthTime = birthTimeMatch?.groupValues?.get(1)?.takeIf { it.isNotEmpty() } 
+            ?: birthTimeMatch?.groupValues?.get(2)?.trim()
+        val gender = genderMatch?.groupValues?.get(1)?.trim()
+        val question = questionMatch?.groupValues?.get(1)?.takeIf { it.isNotEmpty() } 
+            ?: questionMatch?.groupValues?.get(2)?.trim()
+        val fullName = fullNameMatch?.groupValues?.get(1)?.trim()
+        
+        val sb = StringBuilder()
+        
+        // 根据提示词中的关键字定制化响应
+        val hasNameKeyword = prompt.contains("全名") || prompt.contains("姓名")
+        val hasBirthDateKeyword = prompt.contains("出生日期") || prompt.contains("生日")
+        val hasCareerKeyword = prompt.contains("事业") || prompt.contains("职业")
+        val hasLoveKeyword = prompt.contains("感情") || prompt.contains("爱情") || prompt.contains("婚姻")
+        
+        // 生成总论部分
+        sb.append("【总论】\n")
+        if (fullName != null) {
+            sb.append("${fullName}，")
+        }
+        
+        if (birthDate != null) {
+            sb.append("根据您${birthDate}") 
+            if (birthTime != null) {
+                sb.append(" ${birthTime}")
             }
-            methodId == "zhouyi" || prompt.contains("周易") -> simulateZhouYiResponse(prompt)
-            prompt.contains("塔罗牌") -> simulateTarotResponse(prompt)
-            prompt.contains("紫微斗数") -> simulateZiweiResponse(prompt)
-            prompt.contains("星盘") || prompt.contains("占星") -> simulateAstrologyResponse(prompt) 
-            prompt.contains("手相") -> simulatePalmistryResponse(prompt)
-            prompt.contains("面相") -> simulateFaceReadingResponse(prompt)
-            prompt.contains("解梦") -> simulateDreamInterpretationResponse(prompt)
-            prompt.contains("黄历") || prompt.contains("择日") -> simulateAlmanacResponse(prompt)
-            prompt.contains("数字命理") -> simulateNumerologyResponse(prompt)
-            prompt.contains("奇门遁甲") -> simulateQimenResponse(prompt)
-            else -> simulateGenericResponse(prompt)
+            sb.append("的出生信息，")
+        } else {
+            sb.append("根据分析，")
+        }
+        
+        sb.append("您的命盘显示")
+        
+        val traits = listOf("创造力", "领导力", "直觉", "耐心", "细心", "热情", "冷静", "理性", "感性", "随和")
+        val selectedTraits = mutableListOf<String>()
+        val traitCount = random.nextInt(3) + 2  // 2-4个特质
+        for (i in 0 until traitCount) {
+            val trait = traits[random.nextInt(traits.size)]
+            if (!selectedTraits.contains(trait)) {
+                selectedTraits.add(trait)
+            }
+        }
+        sb.append("较强的${selectedTraits.joinToString("和")}。")
+        
+        // 添加负面特质描述
+        val negativeTraits = listOf("固执", "急躁", "优柔寡断", "敏感", "多疑", "冲动", "自我中心", "过度理想化", "情绪化", "缺乏耐心")
+        val selectedNegativeTraits = mutableListOf<String>()
+        val negativeTraitCount = random.nextInt(2) + 1  // 1-2个负面特质
+        for (i in 0 until negativeTraitCount) {
+            val trait = negativeTraits[random.nextInt(negativeTraits.size)]
+            if (!selectedNegativeTraits.contains(trait)) {
+                selectedNegativeTraits.add(trait)
+            }
+        }
+        sb.append("同时也存在${selectedNegativeTraits.joinToString("和")}等需要注意的性格特点。")
+        
+        // 随机选择五行属性
+        val elements = listOf("金", "木", "水", "火", "土")
+        val strongElements = elements[random.nextInt(elements.size)]
+        val weakElements = elements.filter { it != strongElements }.random()
+        sb.append("五行中${strongElements}较旺，${weakElements}较弱。")
+        
+        // 随机生成运势趋势
+        val trends = listOf("稳步上升", "波动起伏", "缓慢提升", "先抑后扬", "保持平稳")
+        sb.append("总体命运呈现${trends[random.nextInt(trends.size)]}的趋势，")
+        
+        // 随机生成关键年龄
+        val age1 = random.nextInt(11) + 25  // 25-35岁
+        val age2 = random.nextInt(11) + 40  // 40-50岁
+        sb.append("尤其在${age1}岁和${age2}岁将有重要转折。\n\n")
+        
+        // 生成事业部分
+        sb.append("【事业】\n")
+        if (hasCareerKeyword) {
+            val careerFields = listOf("管理", "教育", "艺术", "科技", "医疗", "金融", "服务", "制造", "传媒", "法律")
+            val selectedFields = mutableListOf<String>()
+            val fieldCount = random.nextInt(3) + 2  // 2-4个领域
+            for (i in 0 until fieldCount) {
+                val field = careerFields[random.nextInt(careerFields.size)]
+                if (!selectedFields.contains(field)) {
+                    selectedFields.add(field)
+                }
+            }
+            sb.append("您适合从事${selectedFields.joinToString("、")}等领域的工作。")
+        } else {
+            sb.append("在事业发展上，")
+        }
+        
+        val careerStages = listOf("起步", "成长", "稳定", "转型", "辉煌")
+        sb.append("当前处于${careerStages[random.nextInt(careerStages.size)]}阶段，")
+        
+        val year1 = 2023 + random.nextInt(4)  // 2023-2026年
+        val year2 = year1 + random.nextInt(3) + 1  // year1后的1-3年
+        sb.append("【${year1}年到${year2}年】有重要机遇，可能带来职业上的重要突破。")
+        
+        val careerAdvices = listOf(
+            "建议持续学习新技能，提升专业能力",
+            "适合大胆创新，尝试新的领域",
+            "宜稳健发展，避免冒险",
+            "可以寻求合作伙伴，共同发展",
+            "应该加强人脉拓展，寻求贵人相助"
+        )
+        sb.append(careerAdvices[random.nextInt(careerAdvices.size)] + "。\n\n")
+        
+        // 添加事业挑战
+        val careerChallenges = listOf(
+            "工作中容易因${selectedNegativeTraits.firstOrNull() ?: "急躁"}而影响决策质量",
+            "事业发展可能遇到来自同行的强烈竞争",
+            "工作压力较大，需注意调整心态",
+            "容易被琐事分散注意力，影响效率",
+            "职场人际关系需要更多耐心经营"
+        )
+        sb.append("需要注意的是，" + careerChallenges[random.nextInt(careerChallenges.size)] + "。\n\n")
+        
+        // 生成财运部分
+        sb.append("【财运】\n")
+        val wealthLevels = listOf("较好", "波动较大", "稳步增长", "需要谨慎规划", "潜力巨大")
+        sb.append("财运整体${wealthLevels[random.nextInt(wealthLevels.size)]}，")
+        
+        val wealthSources = listOf("主要来自固定收入", "可通过投资获得额外收益", "有意外之财的可能", "需要勤劳积累")
+        sb.append(wealthSources[random.nextInt(wealthSources.size)] + "。")
+        
+        val wealthYear = 2023 + random.nextInt(3)  // 2023-2025年
+        sb.append("【${wealthYear}年】财运较为旺盛，")
+        
+        val wealthAdvices = listOf(
+            "适合投资理财",
+            "宜稳健理财，避免风险投资",
+            "可适当进行房产投资",
+            "应优先偿还债务，稳固财务基础",
+            "建议增加被动收入来源"
+        )
+        sb.append(wealthAdvices[random.nextInt(wealthAdvices.size)] + "。\n\n")
+        
+        val wealthRisks = listOf(
+            "投资需谨慎，近期有财务损失风险",
+            "财务规划欠缺系统性，易造成资源浪费",
+            "消费习惯需要调整，避免冲动消费",
+            "财运虽好但守财能力较弱",
+            "容易受他人影响做出不理性的财务决策"
+        )
+        sb.append("但也要注意，" + wealthRisks[random.nextInt(wealthRisks.size)] + "。\n\n")
+        
+        // 生成感情部分
+        sb.append("【感情】\n")
+        if (hasLoveKeyword || gender != null) {
+            val loveStates = listOf(
+                "感情线条清晰但曲折",
+                "感情发展较为平稳",
+                "感情经历波折但最终圆满",
+                "需要主动追求才能获得理想感情",
+                "容易吸引异性但需谨慎选择"
+            )
+            sb.append(loveStates[random.nextInt(loveStates.size)] + "，")
+            
+            val relationshipCount = random.nextInt(4) + 1  // 1-4段重要感情
+            sb.append("一生中可能经历${relationshipCount}段重要感情。")
+        }
+        
+        val loveTraits = listOf(
+            "您在感情中较为理想化",
+            "您在感情中注重精神交流",
+            "您在感情中渴望安全感",
+            "您在感情中追求刺激与新鲜感",
+            "您在感情中重视忠诚与信任"
+        )
+        sb.append(loveTraits[random.nextInt(loveTraits.size)] + "，")
+        
+        val loveAdvices = listOf(
+            "需要找到理解您独立精神的伴侣",
+            "适合与性格互补的人建立关系",
+            "应该提高沟通能力，避免误解",
+            "宜放下戒备，敞开心扉接受真爱",
+            "建议多关注对方需求，增进感情和谐"
+        )
+        sb.append(loveAdvices[random.nextInt(loveAdvices.size)] + "。\n\n")
+        
+        // 添加关系挑战
+        val relationshipChallenges = listOf(
+            "感情中易因沟通不畅导致误会",
+            "对伴侣期望过高容易造成压力",
+            "缺乏表达情感的能力可能影响亲密关系",
+            "个人独立性与亲密关系的平衡需要调整",
+            "过去的感情阴影可能影响当前关系"
+        )
+        sb.append("值得注意的是，" + relationshipChallenges[random.nextInt(relationshipChallenges.size)] + "。\n\n")
+        
+        // 生成健康部分
+        sb.append("【健康】\n")
+        val bodyParts = listOf("头部", "颈部", "心脏", "肺部", "胃部", "腰部", "腿部", "皮肤")
+        val weakBodyPart = bodyParts[random.nextInt(bodyParts.size)]
+        
+        val healthStates = listOf(
+            "整体健康状况良好",
+            "体质较为稳定，但需加强锻炼",
+            "存在一定健康隐患，需要关注",
+            "体质偏弱，需要调养",
+            "精力充沛，但易过度消耗"
+        )
+        sb.append(healthStates[random.nextInt(healthStates.size)] + "，")
+        
+        val healthAdvices = listOf(
+            "建议加强有氧运动",
+            "注意饮食均衡",
+            "保持充足睡眠",
+            "定期体检",
+            "避免过度紧张和压力"
+        )
+        sb.append(healthAdvices[random.nextInt(healthAdvices.size)] + "。\n\n")
+        
+        val healthConcerns = listOf(
+            "生活作息不规律可能导致${weakBodyPart}问题",
+            "工作压力过大，注意预防精神紧张引发的身体不适",
+            "饮食结构不合理可能导致营养失衡",
+            "缺乏运动习惯，可能影响长期健康",
+            "易忽视小症状，建议定期体检"
+        )
+        sb.append("值得警惕的是，" + healthConcerns[random.nextInt(healthConcerns.size)] + "。\n\n")
+        
+        // 生成建议部分
+        sb.append("【建议】\n")
+        
+        // 如果有具体问题，添加针对性建议
+        if (question != null) {
+            sb.append("关于\"${question}\"的问题，")
+            val specificAdvices = listOf(
+                "建议您保持耐心，时机尚未成熟",
+                "目前情况对您有利，可以积极行动",
+                "需要谨慎考虑各方面因素，不宜操之过急",
+                "有贵人相助的迹象，可以寻求他人支持",
+                "时机已到，可以果断决策"
+            )
+            sb.append(specificAdvices[random.nextInt(specificAdvices.size)] + "。\n\n")
+        }
+        
+        val adviceCount = random.nextInt(3) + 4  // 4-6条建议
+        val allAdvices = listOf(
+            "培养耐心和持续力，不要因短期困难放弃长远目标",
+            "加强情绪管理，避免冲动决策",
+            "建立健康的生活习惯，包括饮食、运动和休息",
+            "学习财务规划，合理配置资产",
+            "在人际关系中保持真诚，但也要有适当边界",
+            "定期反思与调整，使人生方向与内心期望一致",
+            "多与积极向上的人交往，远离负能量",
+            "培养一项终身爱好，丰富精神世界",
+            "学会感恩，保持积极乐观的心态",
+            "关注精神成长，提升内在修养"
+        )
+        
+        val selectedAdvices = allAdvices.shuffled().take(adviceCount)
+        for (i in selectedAdvices.indices) {
+            sb.append("${i + 1}. ${selectedAdvices[i]}")
+            // 确保每条建议后都有换行
+            if (i < selectedAdvices.size - 1) {
+                sb.append("\n")
+            }
+        }
+        
+        return sb.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "生成模拟响应时出错", e)
+            return """
+                【模拟响应】
+                生成模拟响应时出现错误。
+                
+                【原因】
+                可能是由于输入格式不正确或系统临时故障。
+                
+                【建议】
+                1. 请重新尝试算命
+                2. 如果问题持续，可以尝试使用其他算命方式
+                3. 确保输入的问题清晰明确
+                
+                【总结】
+                简单说，系统现在遇到了点小问题，建议您稍后再试，或者换个算命方式。
+            """
         }
     }
     
@@ -575,88 +831,58 @@ object DeepSeekService {
         
         val sb = StringBuilder()
         
-        // 确保使用"星盘描述"作为标题，以便DivinationResultFragment识别
+        // 生成星盘描述数据（这部分将被提取到星盘视图中）
         sb.append("【星盘描述】\n")
         
-        // 生成更明确、更标准的行星位置信息，确保格式统一，便于AstrologyChartView解析
-        sb.append("以下是您的星盘基本信息：\n\n")
-        
-        // 添加出生信息以增加真实性
-        sb.append("出生日期：${birthDate ?: "1990年1月1日"}\n")
-        sb.append("出生时间：${birthTime ?: "12:00"}\n")
-        if (gender != null) {
-            sb.append("性别：$gender\n")
-        }
-        sb.append("\n")
-        
-        // 行星位置信息，确保格式非常清晰规范
+        // 添加行星位置信息
         sb.append("行星位置：\n")
         
+        val planets = listOf("太阳", "月亮", "水星", "金星", "火星", "木星", "土星", "天王星", "海王星", "冥王星", "上升点", "中天点")
         val zodiacSigns = listOf("白羊", "金牛", "双子", "巨蟹", "狮子", "处女", "天秤", "天蝎", "射手", "摩羯", "水瓶", "双鱼")
         
-        // 生成行星位置，每个行星使用一致的格式
-        val planets = listOf("太阳", "月亮", "水星", "金星", "火星", "木星", "土星", "天王星", "海王星", "冥王星", "上升点", "中天点")
-        val usedPositions = mutableSetOf<Int>() // 用于跟踪已使用的位置，避免行星全都在同一个位置
-        
+        // 为每个行星生成随机星座和度数
         for (planet in planets) {
-            // 确保每个行星位置稍有不同
-            var zodiacIndex: Int
-            var degree: Int
-            
-            do {
-                zodiacIndex = random.nextInt(12)
-                degree = random.nextInt(30)
-                // 创建唯一标识符确保位置不完全重复
-                val positionKey = zodiacIndex * 100 + degree
-                if (!usedPositions.contains(positionKey)) {
-                    usedPositions.add(positionKey)
-                    break
-                }
-            } while (usedPositions.size < 12 * 30) // 最多尝试一定次数，避免无限循环
-            
-            // 使用标准格式：* 行星位于星座度数
-            sb.append("* ${planet}位于${zodiacSigns[zodiacIndex]}座${degree}度\n")
+            val zodiac = zodiacSigns[random.nextInt(zodiacSigns.size)]
+            val degree = random.nextInt(30)
+            sb.append("* ${planet}位于${zodiac}座${degree}度\n")
         }
         
-        // 添加行星相位关系信息
-        sb.append("\n行星相位关系：\n")
+        // 添加行星相位信息
+        sb.append("\n行星相位：\n")
         
-        // 定义可能的相位类型
+        // 生成几个随机相位关系
         val aspectTypes = listOf("三分相", "六分相", "四分相", "对分相", "合相")
-        val aspectDegrees = mapOf(
-            "三分相" to 120,
-            "六分相" to 60,
-            "四分相" to 90, 
-            "对分相" to 180,
-            "合相" to 0
-        )
+        val aspectCount = 5 + random.nextInt(3)  // 5-7个相位
         
-        // 生成5-7个不重复的相位关系
-        val aspectCount = 5 + random.nextInt(3)
-        val usedPairs = mutableSetOf<Pair<String, String>>()
-        
+        val selectedPairs = mutableSetOf<Pair<String, String>>()
         for (i in 0 until aspectCount) {
-            // 选择两个不同的行星
-            var planet1: String
-            var planet2: String
-            do {
-                planet1 = planets[random.nextInt(planets.size - 2)] // 排除上升点和中天点
+            var planet1 = planets[random.nextInt(planets.size - 2)]
+            var planet2 = planets[random.nextInt(planets.size - 2)]
+            
+            // 确保不重复且不与自己形成相位
+            var pair = Pair(planet1, planet2)
+            while (planet1 == planet2 || selectedPairs.contains(pair) || selectedPairs.contains(Pair(planet2, planet1))) {
+                planet1 = planets[random.nextInt(planets.size - 2)]
                 planet2 = planets[random.nextInt(planets.size - 2)]
-                val pair = if (planet1 < planet2) Pair(planet1, planet2) else Pair(planet2, planet1)
-                
-                // 确保行星对不重复且两个行星不相同
-                if (planet1 != planet2 && !usedPairs.contains(pair)) {
-                    usedPairs.add(pair)
-                    break
-                }
-            } while (true)
+                pair = Pair(planet1, planet2)
+            }
+            selectedPairs.add(pair)
             
-            // 随机选择相位类型
             val aspectType = aspectTypes[random.nextInt(aspectTypes.size)]
-            val aspectDegree = aspectDegrees[aspectType] ?: 0
+            val degree = when (aspectType) {
+                "三分相" -> 120
+                "六分相" -> 60
+                "四分相" -> 90
+                "对分相" -> 180
+                "合相" -> 0
+                else -> 0
+            }
             
-            // 使用标准格式：* 行星1和行星2形成相位类型(度数度)
-            sb.append("* ${planet1}和${planet2}形成${aspectType}(${aspectDegree}度)\n")
+            // 添加一点随机偏差
+            val deviation = random.nextInt(5)
+            val finalDegree = degree + deviation
+            
+            sb.append("* ${planet1}和${planet2}形成${aspectType}(${finalDegree}度)\n")
         }
         
         // 添加总论部分
@@ -702,92 +928,57 @@ object DeepSeekService {
         
         sb.append("这表明您的${selectedTraits.joinToString("和")}较为突出。\n\n")
         
-        // 添加元素平衡分析
-        sb.append("【元素平衡】\n")
-        sb.append("在您的星盘中：\n")
-        
-        val elements = listOf("火元素", "土元素", "风元素", "水元素")
-        val elementStrengths = mutableMapOf<String, Int>()
-        
-        // 为每种元素随机生成强度值（1-5）
-        for (element in elements) {
-            elementStrengths[element] = 1 + random.nextInt(5)
-        }
-        
-        // 确定最强和最弱的元素
-        val strongestElement = elementStrengths.maxByOrNull { it.value }?.key ?: "火元素"
-        val weakestElement = elementStrengths.minByOrNull { it.value }?.key ?: "水元素"
-        
-        for (element in elements) {
-            val strength = elementStrengths[element] ?: 3
-            val description = when (strength) {
-                1 -> "非常弱"
-                2 -> "较弱"
-                3 -> "中等"
-                4 -> "较强"
-                else -> "非常强"
-            }
-            sb.append("- ${element}：${description}，")
-            
-            when (element) {
-                "火元素" -> sb.append("影响您的热情、动力和创造力\n")
-                "土元素" -> sb.append("影响您的稳定性、实用性和耐心\n")
-                "风元素" -> sb.append("影响您的思考能力、沟通和适应性\n")
-                "水元素" -> sb.append("影响您的情感、直觉和敏感度\n")
-            }
-        }
-        
-        sb.append("\n${strongestElement}最为突出，这使您在")
-        when (strongestElement) {
-            "火元素" -> sb.append("行动力、热情和自信心方面表现出色")
-            "土元素" -> sb.append("踏实、稳重和实用主义方面有优势")
-            "风元素" -> sb.append("思考、表达和社交方面较为出色")
-            "水元素" -> sb.append("情感理解、同理心和直觉方面有特长")
-        }
-        sb.append("。\n\n")
-        
-        // 行星组合分析
-        sb.append("【关键行星组合】\n")
-        
-        // 选择2-3个行星组合进行分析
-        val combinations = mutableListOf<String>()
-        val combinationCount = 2 + random.nextInt(2)
-        
-        val planetCombinations = listOf(
-            "太阳与月亮", "太阳与水星", "太阳与金星", "月亮与火星", 
-            "水星与金星", "金星与火星", "木星与土星", "天王星与海王星"
+        // 生成十二宫解读
+        val houseThemes = mapOf(
+            "第一宫" to "自我形象和外在表现",
+            "第二宫" to "个人财产和价值观",
+            "第三宫" to "沟通、思维和短途旅行",
+            "第四宫" to "家庭、根基和内心情感",
+            "第五宫" to "创造力、爱情和娱乐",
+            "第六宫" to "日常工作、健康和服务",
+            "第七宫" to "伴侣关系和合作",
+            "第八宫" to "共享资源、转变和神秘",
+            "第九宫" to "高等教育、哲学和远程旅行",
+            "第十宫" to "职业、社会地位和成就",
+            "第十一宫" to "朋友、团体和愿望",
+            "第十二宫" to "潜意识、秘密和精神世界"
         )
         
-        for (i in 0 until combinationCount) {
-            val combination = planetCombinations[random.nextInt(planetCombinations.size)]
-            if (!combinations.contains(combination)) {
-                combinations.add(combination)
-            }
+        // 随机选择几个宫位进行解读
+        val houseKeys = houseThemes.keys.toList()
+        val selectedHouses = houseKeys.shuffled(random).take(3)
+        
+        for (house in selectedHouses) {
+            val theme = houseThemes[house]
+            val zodiac = zodiacSigns[random.nextInt(zodiacSigns.size)]
+            val planet = planets[random.nextInt(planets.size - 2)]
+            
+            sb.append("【${house}解读】\n")
+            sb.append("您的${house}位于${zodiac}座，受到${planet}的影响。这个宫位代表${theme}。")
+            
+            val positiveEffects = listOf(
+                "这暗示着您在该领域有较强的天赋",
+                "这为您带来了积极的能量和机会",
+                "这赋予您独特的视角和能力",
+                "这使您能够以创造性的方式处理相关问题",
+                "这使您在该领域更容易取得成功"
+            )
+            
+            val challenges = listOf(
+                "不过，这也可能带来一些挑战，如过度关注细节",
+                "然而，您可能需要克服对完美的追求",
+                "您需要注意平衡理性和情感的需求",
+                "有时可能导致您对自己要求过高",
+                "偶尔可能会让您感到压力过大"
+            )
+            
+            sb.append(positiveEffects[random.nextInt(positiveEffects.size)] + "。")
+            sb.append(challenges[random.nextInt(challenges.size)] + "。\n\n")
         }
         
-        for (combination in combinations) {
-            sb.append("${combination}的相位关系显示：")
-            
-            when (combination) {
-                "太阳与月亮" -> sb.append("您的意识与潜意识之间的互动较为${if (random.nextBoolean()) "和谐" else "紧张"}，这影响了您处理情感和理性问题的方式。")
-                "太阳与水星" -> sb.append("您的思维表达方式与自我认同感有着${if (random.nextBoolean()) "一致的" else "有时冲突的"}关系。")
-                "太阳与金星" -> sb.append("您在爱情与自我价值观方面的态度表现出${if (random.nextBoolean()) "自信和谐的" else "某种程度的矛盾"}特点。")
-                "月亮与火星" -> sb.append("您的情感反应与行动力之间存在${if (random.nextBoolean()) "互相促进的" else "需要平衡的"}动态关系。")
-                "水星与金星" -> sb.append("您的沟通方式和审美价值观${if (random.nextBoolean()) "相互补充" else "有时不一致"}，这会影响人际互动。")
-                "金星与火星" -> sb.append("您在爱情和欲望方面的能量${if (random.nextBoolean()) "协调流动" else "有时候会出现冲突"}，体现在关系互动中。")
-                "木星与土星" -> sb.append("您的扩张愿望与实际限制之间的平衡${if (random.nextBoolean()) "良好" else "需要更多注意"}，影响职业发展。")
-                "天王星与海王星" -> sb.append("您的变革意识与理想主义之间有着${if (random.nextBoolean()) "创造性的张力" else "和谐的共鸣"}，影响您的长期目标。")
-                else -> sb.append("这显示了您性格中一些独特而复杂的方面。")
-            }
-            
-            sb.append("\n")
-        }
-        
-        sb.append("\n")
-        
-        // 生成事业部分
+        // 添加事业部分
         sb.append("【事业】\n")
-        val careerPlanets = listOf("太阳", "土星", "木星", "火星", "中天点")
+        val careerPlanets = listOf("太阳", "土星", "木星", "火星", "水星")
         val careerPlanet = careerPlanets[random.nextInt(careerPlanets.size)]
         
         sb.append("您的事业宫受到${careerPlanet}的主要影响，")
@@ -829,22 +1020,51 @@ object DeepSeekService {
         val loveYear = currentYear + random.nextInt(2)
         sb.append("${loveYear}年对您的感情生活有特殊意义，可能会有重要的关系转变或进展。\n\n")
         
+        // 添加健康部分
+        sb.append("【健康】\n")
+        
+        // 随机选择几个可能的健康注意事项
+        val healthConcerns = listOf(
+            "注意消化系统健康",
+            "关注心血管健康",
+            "保持呼吸系统健康",
+            "重视情绪压力管理",
+            "留意睡眠质量",
+            "关注关节健康",
+            "维护免疫系统功能"
+        )
+        
+        val selectedConcerns = healthConcerns.shuffled(random).take(2)
+        
+        sb.append("星盘显示您应该特别${selectedConcerns.joinToString("，并且")}。")
+        
+        // 添加一些健康建议
+        val healthAdvice = listOf(
+            "规律的体育活动对您尤为重要",
+            "均衡饮食有助于维持您的能量水平",
+            "定期休息和充足睡眠对您至关重要",
+            "冥想和放松技巧可以帮助您保持平衡",
+            "定期体检是保持健康的关键"
+        )
+        
+        sb.append(healthAdvice[random.nextInt(healthAdvice.size)] + "。\n\n")
+        
         // 添加建议部分
         sb.append("【建议】\n")
         
         // 如果有具体问题，添加针对性建议
         if (question != null) {
-            sb.append("关于\"${question}\"的问题，根据您的星盘分析：\n\n")
+            sb.append("关于\"${question}\"的问题，根据您的星盘分析：\n")
             
             val specificAdvices = listOf(
-                "目前星象对您有利，可以积极行动。最佳时机在月亮进入${zodiacSigns[random.nextInt(zodiacSigns.size)]}座时。",
-                "需要等待更有利的星象对齐，建议在${zodiacSigns[random.nextInt(zodiacSigns.size)]}季节行动更佳。",
-                "本阶段应专注于收集信息和规划，待土星离开逆行后再做决定。",
-                "星盘显示这是一个转变期，适合在新月或满月期间做出改变。",
-                "当前星相表明，问题的解决需要您结合理性分析与直觉感受。"
+                "目前星象对您有利，可以积极行动",
+                "需要等待更有利的星象对齐，建议保持耐心",
+                "本阶段应专注于收集信息和规划，暂缓重大决策",
+                "星盘显示这是一个转变期，适合做出改变",
+                "当前星相表明，这个问题的解决需要您更全面的考虑"
             )
             
-            sb.append(specificAdvices[random.nextInt(specificAdvices.size)] + "\n\n")
+            sb.append(specificAdvices[random.nextInt(specificAdvices.size)] + "。\n\n")
         }
         
         // 添加一般性建议
@@ -869,13 +1089,6 @@ object DeepSeekService {
                 sb.append("\n")
             }
         }
-        
-        // 添加一个特别总结
-        sb.append("\n\n【总结】\n")
-        sb.append("您的星盘显示了丰富而独特的能量组合，关键是如何平衡这些能量并发挥其最大潜能。")
-        sb.append("特别注意${strongestElement}的影响，同时关注${weakestElement}相关领域的发展。")
-        sb.append("在${currentYear}至${nextYear}年间，关注${careerPlanets[random.nextInt(careerPlanets.size)]}")
-        sb.append("和${lovePlanets[random.nextInt(lovePlanets.size)]}的行运轨迹，这将对您的事业和关系发展带来重要影响。")
         
         return sb.toString()
     }
@@ -1575,87 +1788,43 @@ object DeepSeekService {
             """
         }
     }
-    
-    /**
-     * 智能分割文本内容为有意义的小节
-     */
-    private fun subdivideSection(title: String, contentLines: List<String>): List<ResultSection> {
-        val result = mutableListOf<ResultSection>()
-        
-        try {
-            // 如果内容行数很少，直接返回原始内容
-            if (contentLines.size <= 5) {
-                result.add(ResultSection(title, contentLines.joinToString("\n")))
-                return result
-            }
-            
-            val lines = contentLines.filter { it.trim().isNotEmpty() }
-            val totalLines = lines.size
-            
-            // 尝试基于内容特征分组（空行、标题特征等）
-            val groups = mutableListOf<MutableList<String>>()
-            var currentGroup = mutableListOf<String>()
-            groups.add(currentGroup)
-            
-            // 可能的标题模式：数字开头、短横线开头、冒号结尾等
-            val titlePattern = Regex("^(\\d+\\.|\\*|•|-|【|\\[).*|.*[:：]\\s*$")
-            
-            for (line in lines) {
-                if (line.trim().isEmpty()) continue
-                
-                if (titlePattern.matches(line.trim()) || 
-                    (currentGroup.isNotEmpty() && line.length < 30 && line.trim().endsWith("："))) {
-                    // 如果当前行看起来像标题且当前组不为空，创建新组
-                    if (currentGroup.isNotEmpty()) {
-                        currentGroup = mutableListOf<String>()
-                        groups.add(currentGroup)
-                    }
-                }
-                
-                currentGroup.add(line)
-            }
-            
-            // 如果只有一个组或组过多，使用简单分段
-            if (groups.size == 1 || groups.size > 5) {
-                // 简单地按长度分为2-3段
-                val segmentCount = if (totalLines > 15) 3 else 2
-                val segmentSize = totalLines / segmentCount
-                
-                for (i in 0 until segmentCount) {
-                    val start = i * segmentSize
-                    val end = if (i == segmentCount - 1) totalLines else (i + 1) * segmentSize
-                    val title = if (segmentCount > 1) "$title ${toRomanNumeral(i + 1)}" else title
-                    result.add(ResultSection(
-                        title,
-                        lines.subList(start, end).joinToString("\n")
-                    ))
-                }
-            } else {
-                // 使用分组结果
-                for ((i, group) in groups.withIndex()) {
-                    if (group.isEmpty()) continue
-                    
-                    // 尝试识别组标题
-                    val groupTitle = if (i == 0) {
-                        title
-                    } else if (group[0].length < 20 && (group[0].endsWith("：") || group[0].endsWith(":") ||
-                        group[0].startsWith("-") || group[0].startsWith("*"))) {
-                        group[0].replace(Regex("^[-*\\s]+"), "").trim()
-                    } else {
-                        "$title ${toRomanNumeral(i + 1)}"
-                    }
-                    
-                    result.add(ResultSection(groupTitle, group.joinToString("\n")))
-                }
-            }
-            
-            return result
-        } catch (e: Exception) {
-            // 出现任何错误，返回原内容
-            Log.e(TAG, "细分内容时出错", e)
-            result.add(ResultSection(title, contentLines.joinToString("\n")))
-            return result
         }
+        
+        // 如果只有一个组或组过多，使用简单分段
+        if (groups.size == 1 || groups.size > 5) {
+            // 简单地按长度分为2-3段
+            val segmentCount = if (totalLines > 15) 3 else 2
+            val segmentSize = totalLines / segmentCount
+            
+            for (i in 0 until segmentCount) {
+                val start = i * segmentSize
+                val end = if (i == segmentCount - 1) totalLines else (i + 1) * segmentSize
+                val title = if (segmentCount > 1) "$baseTitle ${toRomanNumeral(i + 1)}" else baseTitle
+                result.add(ResultSection(
+                    title,
+                    lines.subList(start, end).joinToString("\n")
+                ))
+            }
+        } else {
+            // 使用分组结果
+            for ((i, group) in groups.withIndex()) {
+                if (group.isEmpty()) continue
+                
+                // 尝试识别组标题
+                val groupTitle = if (i == 0) {
+                    baseTitle
+                } else if (group[0].length < 20 && (group[0].endsWith("：") || group[0].endsWith(":") ||
+                    group[0].startsWith("-") || group[0].startsWith("*"))) {
+                    group[0].replace(Regex("^[-*\\s]+"), "").trim()
+                } else {
+                    "$baseTitle ${toRomanNumeral(i + 1)}"
+                }
+                
+                result.add(ResultSection(groupTitle, group.joinToString("\n")))
+            }
+        }
+        
+        return result
     }
     
     /**
@@ -1812,10 +1981,123 @@ object DeepSeekService {
     }
     
     /**
-     * 将数字转换为罗马数字表示
+     * 将单个大段落细分为多个小段落
      */
-    private fun toRomanNumeral(number: Int): String {
-        return when (number) {
+    private fun subdivideSection(title: String, contentLines: List<String>): List<ResultSection> {
+        val result = mutableListOf<ResultSection>()
+        
+        try {
+            // 如果段落很短，直接返回
+            if (contentLines.size <= 10) {
+                result.add(ResultSection(title, contentLines.joinToString("\n")))
+                return result
+            }
+            
+            // 尝试基于内容主题进行分段
+            val subSections = mutableListOf<Pair<String, MutableList<String>>>()
+            var currentSubTitle = "$title I"
+            var currentSubContent = mutableListOf<String>()
+            
+            // 关键词映射表，用于检测子主题
+            val keywordMap = mapOf(
+                "梦境概述" to listOf("梦的基本含义", "梦境象征", "梦的背景", "梦的主题", "梦的情绪"),
+                "传统解读" to listOf("周公解梦", "古代观点", "传统象征", "吉凶寓意", "古籍记载", "民间传说", "传统文化"),
+                "现代解析" to listOf("心理学视角", "弗洛伊德", "荣格", "潜意识", "象征意义", "情感投射", "压力反映"),
+                "启示与建议" to listOf("建议", "指导", "行动方案", "注意事项", "提醒", "解决方法", "积极方面", "消极方面")
+            )
+            
+            // 查找可能的分段点
+            val potentialBreakPoints = mutableListOf<Int>()
+            
+            // 基于段落长度和内容划分
+            for (i in contentLines.indices) {
+                val line = contentLines[i]
+                
+                // 检查是否包含与主标题相关的关键词
+                val relevantKeywords = keywordMap[title] ?: emptyList()
+                if (relevantKeywords.any { keyword -> line.contains(keyword) }) {
+                    potentialBreakPoints.add(i)
+                }
+                
+                // 检查是否是短段落的开头（表示可能是新主题）
+                if (line.length < 15 && i < contentLines.size - 1 && 
+                    (line.endsWith("：") || line.endsWith(":") || 
+                     line.contains("首先") || line.contains("其次") || 
+                     line.contains("此外") || line.contains("最后") || 
+                     line.contains("总的来说") || line.contains("总的来讲") || 
+                     line.contains("值得注意的是") || line.contains("特别提醒"))) {
+                    potentialBreakPoints.add(i)
+                }
+                
+                // 如果遇到明显的分隔符
+                if (line.startsWith("---") || line.startsWith("***") || line.startsWith("===") || 
+                    line == "•" || line == "·" || line == "⊙" || line == "☉" || line == "◆") {
+                    potentialBreakPoints.add(i)
+                }
+            }
+            
+            // 如果没有找到自然分段点，根据段落长度均匀分割
+            if (potentialBreakPoints.isEmpty() || potentialBreakPoints.size == 1) {
+                val idealSubSectionSize = 5 // 理想的小段落大小
+                val numSubSections = max(2, contentLines.size / idealSubSectionSize)
+                
+                // 均匀分段
+                val avgSize = contentLines.size / numSubSections
+                for (i in 0 until numSubSections) {
+                    val startIdx = i * avgSize
+                    val endIdx = if (i == numSubSections - 1) contentLines.size else (i + 1) * avgSize
+                    
+                    val subTitle = if (numSubSections > 1) "$title ${toRomanNumeral(i + 1)}" else title
+                    val subContent = contentLines.subList(startIdx, endIdx).joinToString("\n")
+                    
+                    result.add(ResultSection(subTitle, subContent))
+                }
+            } else {
+                // 添加第一个子段落（从开始到第一个分段点）
+                if (potentialBreakPoints[0] > 0) {
+                    val subTitle = "$title I"
+                    val subContent = contentLines.subList(0, potentialBreakPoints[0]).joinToString("\n")
+                    result.add(ResultSection(subTitle, subContent))
+                }
+                
+                // 添加中间的子段落
+                for (i in 0 until potentialBreakPoints.size - 1) {
+                    val startIdx = potentialBreakPoints[i]
+                    val endIdx = potentialBreakPoints[i + 1]
+                    
+                    val subTitle = "$title ${toRomanNumeral(i + 2)}" // +2因为第一个已经是I了
+                    val subContent = contentLines.subList(startIdx, endIdx).joinToString("\n")
+                    result.add(ResultSection(subTitle, subContent))
+                }
+                
+                // 添加最后一个子段落（从最后一个分段点到结束）
+                val lastBreakPoint = potentialBreakPoints.last()
+                if (lastBreakPoint < contentLines.size - 1) {
+                    val subTitle = "$title ${toRomanNumeral(potentialBreakPoints.size + 1)}"
+                    val subContent = contentLines.subList(lastBreakPoint, contentLines.size).joinToString("\n")
+                    result.add(ResultSection(subTitle, subContent))
+                }
+            }
+            
+            // 如果经过处理后仍然没有分段，返回原始段落
+            if (result.isEmpty()) {
+                result.add(ResultSection(title, contentLines.joinToString("\n")))
+            }
+            
+        } catch (e: Exception) {
+            // 出错时返回原始段落
+            Log.e(TAG, "细分段落异常", e)
+            result.add(ResultSection(title, contentLines.joinToString("\n")))
+        }
+        
+        return result
+    }
+    
+    /**
+     * 将数字转换为罗马数字
+     */
+    private fun toRomanNumeral(num: Int): String {
+        return when (num) {
             1 -> "I"
             2 -> "II"
             3 -> "III"
@@ -1826,7 +2108,7 @@ object DeepSeekService {
             8 -> "VIII"
             9 -> "IX"
             10 -> "X"
-            else -> number.toString()
+            else -> num.toString()
         }
     }
     
@@ -2063,87 +2345,70 @@ object DeepSeekService {
      */
     private fun parseResponse(method: DivinationMethod, inputData: Map<String, String>, response: String): DivinationResult {
         try {
-            // 解析JSON响应
-            val jsonResponse = JSONObject(response)
-            
-            var responseContent = ""
-            
-            // 获取内容
-            if (jsonResponse.has("choices")) {
-                val choices = jsonResponse.getJSONArray("choices")
-                if (choices.length() > 0) {
-                    val choice = choices.getJSONObject(0)
-                    if (choice.has("message")) {
-                        responseContent = choice.getJSONObject("message").getString("content")
+            // 根据不同算命方法处理响应
+            var sections = when (method.id) {
+                "zhouyi" -> {
+                    val zhouYiSections = splitZhouYiContent(response)
+                    if (zhouYiSections.isEmpty()) {
+                        // 如果解析结果为空，添加默认内容防止空白页面
+                        Log.w(TAG, "周易解析结果为空，使用备用内容")
+                        listOf(
+                            ResultSection(
+                                title = "卦象",
+                                content = "本次预测得到了周易卦象，但内容解析出现问题。"
+                            ),
+                            ResultSection(
+                                title = "解析",
+                                content = "卦象内容解析失败，请重新尝试。可能是格式不兼容或数据问题导致。\n\n如果问题持续存在，请尝试其他算命方式。"
+                            ),
+                            ResultSection(
+                                title = "原始内容",
+                                content = response.take(500)
+                            )
+                        )
+                    } else {
+                        zhouYiSections
                     }
                 }
+                "dream" -> splitDreamContent(response)
+                "tarot" -> {
+                    // 对塔罗牌响应进行特殊处理
+                    val baseSection = parseResponseToSections(response)
+                    baseSection.flatMap { section -> 
+                        subdivideTarotSection(section.title, section.content.split("\n"))
+                    }
+                }
+                else -> parseResponseToSections(response)
             }
             
-            // 如果无法获取内容，使用备用方法尝试解析
-            if (responseContent.isBlank()) {
-                Log.w(TAG, "无法从标准格式获取响应内容，尝试备用解析方法")
-                responseContent = extractTextFromJson(response)
+            // 确保所有方法都至少有一个有效部分
+            if (sections.isEmpty()) {
+                Log.w(TAG, "${method.id}方法解析结果为空，添加默认内容")
+                sections = listOf(
+                    ResultSection(
+                        title = "解析结果",
+                        content = "无法生成有效的解析内容。这可能是由于数据格式问题或系统临时故障导致。\n\n请稍后重试或选择其他算命方式。"
+                    )
+                )
             }
             
-            // 如果仍然为空，使用模拟响应
-            if (responseContent.isBlank()) {
-                Log.w(TAG, "响应内容为空，使用模拟响应")
-                responseContent = simulateResponse(method.name)
-            }
-            
-            // 将文本切分为多个部分并处理
-            val sections = parseResponseToSections(responseContent)
-            
-            // 如果是中国传统算命方法，在结果前面添加卦诗
-            val resultSections = mutableListOf<ResultSection>()
-            
-            // 检查是否为中国传统算命方法（type=1）
-            if (method.type == 1) {
-                // 生成卦诗并添加到结果最前面
-                val poem = generateDivinationPoem(method, inputData, responseContent)
-                resultSections.add(poem)
-            }
-            
-            // 添加原始解析的结果部分
-            resultSections.addAll(sections)
-            
-            // 创建结果对象
+            // 创建并返回占卜结果对象
             return DivinationResult(
                 id = UUID.randomUUID().toString(),
                 methodId = method.id,
                 createTime = Date(),
                 inputData = inputData,
-                resultSections = resultSections
+                resultSections = sections
             )
         } catch (e: Exception) {
-            Log.e(TAG, "解析响应失败", e)
-            
-            // 返回简化的错误结果
-            val errorSections = mutableListOf<ResultSection>()
-            
-            // 即使出错，也尝试为中国传统算命方法添加卦诗（使用简化内容）
-            if (method.type == 1) {
-                val poem = generateDivinationPoem(method, inputData, "错误解析")
-                errorSections.add(poem)
-            }
-            
-            errorSections.add(ResultSection(
-                title = "解析错误",
-                content = "解析AI响应时出现错误: ${e.message}\n\n原始响应:\n${response.take(200)}..."
-            ))
-            
-            // 添加模拟结果作为备用
-            if (method.id == "zhouyi") {
-                // 对周易使用特殊的模拟
-                val simulatedResponse = simulateZhouYiResponse(method.name)
-                val sections = parseResponseToSections(simulatedResponse)
-                errorSections.addAll(sections)
-            } else {
-                // 对其他方法使用通用模拟
-                val simulatedResponse = simulateResponse(method.name)
-                val sections = parseResponseToSections(simulatedResponse)
-                errorSections.addAll(sections)
-            }
+            // 出现异常时创建一个错误结果
+            Log.e(TAG, "解析响应出错: ${e.message}", e)
+            val errorSections = listOf(
+                ResultSection(
+                title = "错误提示",
+                    content = "处理结果时出错: ${e.message}\n\n请重试或选择其他算命方式。"
+                )
+            )
             
             return DivinationResult(
                 id = UUID.randomUUID().toString(),
@@ -2152,1293 +2417,6 @@ object DeepSeekService {
                 inputData = inputData,
                 resultSections = errorSections
             )
-        }
-    }
-    
-    /**
-     * 尝试从各种可能的JSON格式中提取文本内容
-     */
-    private fun extractTextFromJson(jsonStr: String): String {
-        try {
-            val jsonObject = JSONObject(jsonStr)
-            
-            // 尝试多种可能的路径
-            val possiblePaths = listOf(
-                arrayOf("choices", 0, "message", "content"),
-                arrayOf("choices", 0, "text"),
-                arrayOf("output", "text"),
-                arrayOf("result", "text"),
-                arrayOf("content"),
-                arrayOf("text")
-            )
-            
-            for (path in possiblePaths) {
-                try {
-                    var current: Any = jsonObject
-                    for (key in path) {
-                        current = if (key is Int) {
-                            (current as JSONArray).get(key)
-                        } else {
-                            (current as JSONObject).get(key.toString())
-                        }
-                    }
-                    if (current is String && current.isNotBlank()) {
-                        return current
-                    }
-                } catch (e: Exception) {
-                    // 继续尝试下一个路径
-                    continue
-                }
-            }
-            
-            // 如果上述方法都失败，尝试直接返回整个JSON字符串
-            return jsonStr
-        } catch (e: Exception) {
-            // 如果不是有效JSON，直接返回原字符串
-            return jsonStr
-        }
-    }
-    
-    /**
-     * 为塔罗牌内容创建适当的分段
-     */
-    private fun subdivideTarotSection(title: String, contentLines: List<String>): List<ResultSection> {
-        val result = mutableListOf<ResultSection>()
-        
-        try {
-            // 如果内容行数很少，直接返回原始内容
-            if (contentLines.size <= 5) {
-                result.add(ResultSection(title, contentLines.joinToString("\n")))
-                return result
-            }
-            
-            // 尝试识别塔罗牌内容中的小标题
-            val groups = mutableListOf<MutableList<String>>()
-            var currentGroup = mutableListOf<String>()
-            groups.add(currentGroup)
-            
-            // 小标题模式：数字编号、短横线开头、冒号结尾等
-            val titlePattern = Regex("^(\\d+\\.|\\*|•|-|【|\\[).*|.*[:：]\\s*$")
-            
-            for (line in contentLines) {
-                if (line.trim().isEmpty()) continue
-                
-                if (titlePattern.matches(line.trim()) || 
-                    (currentGroup.isNotEmpty() && line.length < 30 && line.trim().endsWith("："))) {
-                    // 如果当前行看起来像标题且当前组不为空，创建新组
-                    if (currentGroup.isNotEmpty()) {
-                        currentGroup = mutableListOf<String>()
-                        groups.add(currentGroup)
-                    }
-                }
-                
-                currentGroup.add(line)
-            }
-            
-            // 处理分组，生成结果
-            if (groups.size == 1) {
-                // 没有找到明显的小标题，使用通用方法分段
-                return subdivideSection(title, contentLines)
-            }
-            
-            // 从组中提取标题
-            for (group in groups) {
-                if (group.isEmpty()) continue
-                
-                val groupTitle: String
-                val groupContent: List<String>
-                
-                // 判断第一行是否是标题
-                if (titlePattern.matches(group[0].trim()) || group[0].length < 30) {
-                    // 第一行作为标题
-                    groupTitle = group[0].replace(Regex("^[\\d\\*•\\-【\\[]+\\.?\\s*"), "")
-                                         .replace(Regex("[:：]\\s*$"), "")
-                                         .trim()
-                    groupContent = if (group.size > 1) group.subList(1, group.size) else listOf("无详细内容")
-                } else {
-                    // 使用原标题
-                    groupTitle = title
-                    groupContent = group
-                }
-                
-                result.add(ResultSection(groupTitle, groupContent.joinToString("\n")))
-            }
-            
-            return result
-        } catch (e: Exception) {
-            // 出现任何错误，返回原内容
-            Log.e(TAG, "细分塔罗内容时出错", e)
-            result.add(ResultSection(title, contentLines.joinToString("\n")))
-            return result
-        }
-    }
-    
-    /**
-     * 解析API错误消息，返回用户友好的错误说明
-     */
-    private fun getApiErrorMessage(errorJson: String): String {
-        try {
-            val jsonObject = JSONObject(errorJson)
-            
-            // 尝试提取错误信息
-            if (jsonObject.has("error")) {
-                val errorObj = jsonObject.getJSONObject("error")
-                if (errorObj.has("message")) {
-                    return errorObj.getString("message")
-                }
-                // 有些API返回type字段
-                if (errorObj.has("type")) {
-                    return "错误类型: " + errorObj.getString("type")
-                }
-            }
-            
-            // 返回完整错误，但限制长度
-            return if (errorJson.length > 100) errorJson.substring(0, 100) + "..." else errorJson
-        } catch (e: Exception) {
-            Log.w(TAG, "解析API错误信息失败", e)
-            return "无法解析错误详情"
-        }
-    }
-    
-    /**
-     * 为中国传统算命结果生成卦诗
-     * 根据算命方法和输入数据生成一首与结果相符的卦诗
-     */
-    private fun generateDivinationPoem(method: DivinationMethod, inputData: Map<String, String>, content: String): ResultSection {
-        // 从内容中提取主题关键词来生成更相关的卦诗
-        var theme = ""
-        try {
-            // 提取内容中的关键词
-            val keywords = extractKeywords(content)
-            theme = keywords.take(3).joinToString("、")
-        } catch (e: Exception) {
-            Log.e(TAG, "提取关键词失败", e)
-        }
-        
-        // 根据算命方法选择合适的卦诗风格
-        val poemTitle = when (method.id) {
-            "zhouyi" -> "卦诗"
-            "bazi" -> "命诗"
-            "ziwei" -> "星诗"
-            "almanac" -> "日诗"
-            "dream" -> "梦诗"
-            else -> "卦诗"
-        }
-        
-        // 生成卦诗内容
-        val poem = StringBuilder()
-        
-        // 如果有主题，先添加主题标题行并加上空行分隔
-        if (theme.isNotEmpty()) {
-            poem.append("《").append(theme).append("》\n\n")
-        }
-        
-        // 对于不同的算命方法，生成不同风格的卦诗
-        poem.append(when (method.id) {
-            "zhouyi" -> {
-                try {
-                    // 从内容中提取卦象
-                    var gua = "卦象未知"
-                    val guaPattern = Regex("【卦象】[\\s\\S]*?得到(.)卦")
-                    val match = guaPattern.find(content)
-                    if (match != null && match.groupValues.size > 1) {
-                        gua = match.groupValues[1]
-                    } else {
-                        // 尝试其他模式匹配
-                        val altPattern = Regex("卦象是([乾坤震艮坎离巽兑])卦")
-                        val altMatch = altPattern.find(content)
-                        if (altMatch != null && altMatch.groupValues.size > 1) {
-                            gua = altMatch.groupValues[1]
-                        } else {
-                            // 如果无法提取，随机选择一个
-                            gua = listOf("乾", "坤", "震", "艮", "坎", "离", "巽", "兑").random()
-                        }
-                    }
-                    
-                    // 记录卦象信息以便日志追踪
-                    Log.d(TAG, "为周易卦象'$gua'生成卦诗")
-                    
-                    generatePoemViaAPI(gua, "周易", theme)
-                } catch (e: Exception) {
-                    // 所有方法都失败时，使用最简单的备用诗
-                    Log.e(TAG, "生成周易卦诗过程中发生错误", e)
-                    val gua = listOf("乾", "坤", "震", "艮", "坎", "离", "巽", "兑").random()
-                    "${gua}卦示幽微，天机暗中来。\n一言能解惑，万象自安排。\n运势如流水，前程似锦绣。\n莫问前程事，心静自然明。"
-                }
-            }
-            "bazi" -> {
-                try {
-                    // 尝试从内容中提取用户的命主用神或五行属性
-                    var element = ""
-                    val patternList = listOf(
-                        Regex("喜用神[：:](.*?)[\n,。]"),
-                        Regex("日主[：:](.*?)[\n,。]"),
-                        Regex("五行属性[：:](.*?)[\n,。]")
-                    )
-                    
-                    for (pattern in patternList) {
-                        val match = pattern.find(content)
-                        if (match != null && match.groupValues.size > 1) {
-                            element = match.groupValues[1].trim()
-                            if (element.isNotEmpty()) break
-                        }
-                    }
-                    
-                    // 如果没有找到，使用五行元素之一
-                    if (element.isEmpty()) {
-                        element = listOf("金", "木", "水", "火", "土").random()
-                    }
-                    
-                    Log.d(TAG, "为八字命理元素'$element'生成命诗")
-                    
-                    generatePoemViaAPI(element, "八字命理", theme)
-                } catch (e: Exception) {
-                    Log.e(TAG, "生成八字命诗过程中发生错误", e)
-                    """
-                    命局藏玄机，八字定乾坤。
-                    福禄随缘至，祸福自己求。
-                    顺势而为进，逆境亦成长。
-                    心怀善念行，福报自然来。
-                    """.trimIndent()
-                }
-            }
-            "ziwei" -> {
-                try {
-                    // 尝试从内容中提取紫微命盘主星
-                    var star = ""
-                    val patternList = listOf(
-                        Regex("命宫主星[：:](.*?)[\n,。]"),
-                        Regex("命宫[：:](.*?)[\n,。]"),
-                        Regex("主星[：:](.*?)[\n,。]")
-                    )
-                    
-                    for (pattern in patternList) {
-                        val match = pattern.find(content)
-                        if (match != null && match.groupValues.size > 1) {
-                            star = match.groupValues[1].trim()
-                            if (star.isNotEmpty()) break
-                        }
-                    }
-                    
-                    // 如果没有找到，使用紫微主星之一
-                    if (star.isEmpty()) {
-                        star = listOf("紫微", "天机", "太阳", "武曲", "天同", "廉贞", "天府", "太阴", "贪狼", "巨门", "天相", "天梁", "七杀", "破军").random()
-                    }
-                    
-                    Log.d(TAG, "为紫微斗数主星'$star'生成星诗")
-                    
-                    generatePoemViaAPI(star, "紫微斗数", theme)
-                } catch (e: Exception) {
-                    Log.e(TAG, "生成紫微星诗过程中发生错误", e)
-                    """
-                    紫微垂象示，星辰暗中明。
-                    一生多坎坷，终得见光明。
-                    命途虽已定，变数在人为。
-                    善修身与心，自有福相随。
-                    """.trimIndent()
-                }
-            }
-            // ... 为其他算命方法生成诗
-            else -> {
-                try {
-                    // 为其他方法提供通用的诗歌生成
-                    val methodName = method.name
-                    
-                    Log.d(TAG, "为${methodName}生成通用诗")
-                    
-                    generatePoemViaAPI("", methodName, theme)
-                } catch (e: Exception) {
-                    Log.e(TAG, "生成通用诗过程中发生错误", e)
-                    """
-                    天机玄妙不可测，一言难尽古今情。
-                    顺应自然心安泰，勿忘初心向前行。
-                    福祸无常难预料，心存善念福自来。
-                    明心见性修身行，自有天道酬勤心。
-                    """.trimIndent()
-                }
-            }
-        })
-        
-        return ResultSection(poemTitle, poem.toString())
-    }
-    
-    /**
-     * 通过API生成诗歌的通用方法
-     * @param keyword 主要关键词（卦象/元素/星宿等）
-     * @param methodName 算命方法名称
-     * @param theme 可选的主题
-     * @return 生成的诗歌内容
-     */
-    private fun generatePoemViaAPI(keyword: String, methodName: String, theme: String = ""): String {
-        // 构建诗歌生成提示词
-        val poemPrompt = """
-        请为${methodName}${if (keyword.isNotEmpty()) "中的「$keyword」" else ""}创作一首优美、富有哲理的诗。
-        ${if (theme.isNotEmpty()) "诗的主题是关于「$theme」。" else ""}
-        要求：
-        1. 八句诗，每句五言或七言，遵循中国古典诗词格律
-        2. ${if (keyword.isNotEmpty()) "诗中必须包含「$keyword」字" else "诗中必须体现${methodName}的特点"}
-        3. 反映${if (keyword.isNotEmpty()) "$keyword" else methodName}的特质和哲学意义
-        4. 风格庄重典雅，有传统韵味
-        5. 内容要富有启示性，适合作为占卜结果的引导
-        6. 直接输出诗歌内容，不要有任何前言、解释或标题
-        """
-
-        // 尝试调用API生成诗歌
-        try {
-            // 简化的API调用，仅用于诗歌生成
-            val requestBody = JSONObject().apply {
-                put("model", "deepseek-chat")
-                put("messages", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("role", "user")
-                        put("content", poemPrompt)
-                    })
-                })
-                put("max_tokens", 500)
-                put("temperature", 0.8)  // 稍微提高创造性
-            }
-
-            // 创建连接并发送请求
-            val url = URL(API_URL)
-            val connection = url.openConnection() as HttpsURLConnection
-            connection.requestMethod = "POST"
-            connection.setRequestProperty("Content-Type", "application/json")
-            // 尝试从应用上下文获取API密钥
-            val appContext = getApplicationContext()
-            val apiKey = if (appContext != null) {
-                getApiKey(appContext)
-            } else {
-                ""  // 如果无法获取上下文，使用空字符串
-            }
-            
-            Log.d(TAG, "尝试为${methodName}${if (keyword.isNotEmpty()) "中的「$keyword」" else ""}生成诗")
-            
-            if (apiKey.isNotEmpty()) {
-                connection.setRequestProperty("Authorization", "Bearer $apiKey")
-                connection.connectTimeout = 15000  // 15秒连接超时
-                connection.readTimeout = 30000     // 30秒读取超时
-                connection.doOutput = true
-
-                // 写入请求
-                DataOutputStream(connection.outputStream).use { 
-                    it.write(requestBody.toString().toByteArray()) 
-                }
-
-                // 处理响应
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val response = BufferedReader(
-                        InputStreamReader(connection.inputStream)
-                    ).use { it.readText() }
-
-                    // 解析JSON响应
-                    val jsonResponse = JSONObject(response)
-                    val choices = jsonResponse.getJSONArray("choices")
-                    if (choices.length() > 0) {
-                        val messageObj = choices.getJSONObject(0).getJSONObject("message")
-                        val poemContent = messageObj.getString("content").trim()
-                        
-                        // 记录成功
-                        Log.d(TAG, "成功从API获取诗：${poemContent.take(20)}...")
-                        return poemContent  // 返回API生成的诗
-                    } else {
-                        throw Exception("API响应中没有找到诗歌内容")
-                    }
-                } else {
-                    // 读取错误信息
-                    val errorResponse = BufferedReader(
-                        InputStreamReader(connection.errorStream)
-                    ).use { it.readText() }
-                    
-                    Log.e(TAG, "获取诗歌API错误: ${connection.responseCode}, $errorResponse")
-                    throw Exception("API调用失败: ${connection.responseCode}")
-                }
-            } else {
-                Log.w(TAG, "未配置API密钥，无法生成诗")
-                throw Exception("未配置API密钥")
-            }
-        } catch (e: Exception) {
-            // 如果API调用失败，使用备用诗
-            Log.e(TAG, "诗歌API调用失败: ${e.message}", e)
-            
-            // 基于关键词和当前时间，生成确定性随机种子
-            val seed = ((keyword + methodName).hashCode() + System.currentTimeMillis() / (24 * 60 * 60 * 1000)).toLong()
-            val random = Random(seed)
-            
-            // 基于关键词和算命方法选择备用诗
-            val backupPoems = when (methodName) {
-                "周易" -> {
-                    when (keyword) {
-                        "乾" -> listOf(
-                            "乾坤大父德，万物仰生辉。\n刚健君子志，自强不息时。\n厚积方能发，谦和处世宜。\n天行道常在，福祉自天随。",
-                            "乾元始太极，一气化阴阳。\n刚健君子德，自强志弥坚。\n天行何穷已，大道本无疆。\n顺应天地意，万事皆可昌。",
-                            "乾天运行健，日月星辰明。\n君子修厚德，自强永不停。\n九五居尊位，万物仰高明。\n顺天而行事，功成名自成。"
-                        )
-                        "坤" -> listOf(
-                            "坤厚载万物，大地育群生。\n柔顺行君道，容忍养和平。\n善积多福报，恶聚必自倾。\n大道无言说，默默化有形。",
-                            "坤土承天泽，厚德载物行。\n母仪天下范，柔德育群生。\n包容万物象，助长众生情。\n谦逊随时节，功成不自矜。",
-                            "坤宁静和顺，大地蕴生机。\n厚德方载物，柔道可包容。\n万物皆化育，众生尽安宁。\n君子遵坤德，利在永守贞。"
-                        )
-                        else -> listOf(
-                            "${keyword}卦藏深意，天机暗中来。\n一言能解惑，万象自安排。\n运势如流水，前程似锦绣。\n莫问前程事，心静自然明。",
-                            "观${keyword}悟天机，玄妙通古今。\n一念即千里，万象归一心。\n福祸皆有数，吉凶在人为。\n顺应时与势，心安即是真。",
-                            "${keyword}象示天机，妙理蕴其中。\n阴阳相辅合，刚柔互相融。\n君子观变化，思索致广大。\n得失皆由己，修身自安康。"
-                        )
-                    }
-                }
-                "八字命理" -> listOf(
-                    "${keyword}为用养元气，命理显通明。\n先天由父母，后天在修行。\n知命不惧命，顺势而为进。\n天机藏玄妙，静水见本心。",
-                    "八字${keyword}为引，命理定乾坤。\n阴阳为道本，五行为命门。\n福禄皆有数，祸福自己求。\n顺势而为进，逆境亦成长。",
-                    "命由${keyword}定性，八字藏天机。\n一生多曲折，终将得安宁。\n知命不惧命，立德可改运。\n谋事在人为，成事由天定。"
-                )
-                "紫微斗数" -> listOf(
-                    "${keyword}耀命宫，星辰照人生。\n一世荣枯事，皆在命盘中。\n善修身与德，自有天佑助。\n逆境见真章，静心得妙用。",
-                    "紫微${keyword}光，命宫照分明。\n星辰演命数，福祸皆有因。\n知命不迷命，修德可改运。\n天机虽难测，心正自安然。",
-                    "${keyword}星垂象，紫微命盘明。\n一生多跌宕，终得见光明。\n命途虽已定，变数在人为。\n修身养浩然，自有福相随。"
-                )
-                else -> listOf(
-                    "天机玄妙不可测，一言难尽古今情。\n顺应自然心安泰，勿忘初心向前行。\n福祸无常难预料，心存善念福自来。\n明心见性修身行，自有天道酬勤心。",
-                    "命理${methodName}妙，天机藏微秒。\n万象皆有因，一念可改天。\n顺势而为进，逆境见真情。\n修身正己志，心安福自临。",
-                    "${methodName}显天机，玄妙蕴其中。\n一世荣与枯，皆在命中求。\n心正行亦端，处世无愧怍。\n福祸皆有因，修身得安宁。"
-                )
-            }
-            
-            // 随机选择一首备用诗
-            return backupPoems[random.nextInt(backupPoems.size)]
-        }
-    }
-    
-    /**
-     * 从文本中提取关键词
-     */
-    private fun extractKeywords(text: String): List<String> {
-        // 简单实现：提取内容中出现次数最多的词语作为关键词
-        // 使用更简单的分隔方式避免复杂正则表达式
-        val pattern = "[\\s,.。，、；;!！?？:：()（）]+"
-        val regex = Regex(pattern)
-        val words = text.split(regex)
-        val wordCount = mutableMapOf<String, Int>()
-        
-        // 排除常见虚词和短词
-        val stopWords = setOf("的", "了", "是", "在", "我", "你", "他", "她", "它", "有", "和", "与", "这", "那", "为", "以")
-        
-        for (word in words) {
-            val trimmedWord = word.trim()
-            if (trimmedWord.length >= 2 && trimmedWord !in stopWords) {
-                wordCount[trimmedWord] = (wordCount[trimmedWord] ?: 0) + 1
-            }
-        }
-        
-        // 按出现次数排序并返回前10个词
-        return wordCount.entries
-            .sortedByDescending { it.value }
-            .take(10)
-            .map { it.key }
-    }
-
-    /**
-     * 模拟八字命理响应
-     */
-    private fun simulateBaziResponse(prompt: String): String {
-        // 使用固定的种子使每次结果不同但可预测
-        val currentTime = System.currentTimeMillis()
-        val random = Random(currentTime)
-        
-        // 提取用户输入的关键信息
-        val birthDateMatch = "出生日期：([^\\n]+)".toRegex().find(prompt)
-        val birthTimeMatch = "出生时间：([^\\n]+)|出生时辰：([^\\n]+)".toRegex().find(prompt)
-        val genderMatch = "性别：([^\\n]+)".toRegex().find(prompt)
-        
-        val birthDate = birthDateMatch?.groupValues?.get(1)?.trim()
-        val birthTime = birthTimeMatch?.groupValues?.get(1)?.takeIf { it.isNotEmpty() } 
-            ?: birthTimeMatch?.groupValues?.get(2)?.trim()
-        val gender = genderMatch?.groupValues?.get(1)?.trim()
-        
-        val baziResponse = StringBuilder()
-        
-        // 八字命盘
-        baziResponse.append("【八字命盘】\n")
-        
-        // 生成五行分析
-        val wuxing = arrayOf("金", "木", "水", "火", "土")
-        val wuxingCount = IntArray(5)
-        
-        // 如果有出生日期，生成更个性化的内容
-        if (birthDate != null) {
-            // 简单解析出年月日
-            val dateComponents = birthDate.replace(Regex("[年月日-]"), " ").trim().split(Regex("\\s+"))
-            val year = dateComponents.getOrNull(0)?.toIntOrNull() ?: 1990
-            val month = dateComponents.getOrNull(1)?.toIntOrNull() ?: 1
-            val day = dateComponents.getOrNull(2)?.toIntOrNull() ?: 1
-            
-            // 简单的天干地支转换
-            val tianGan = arrayOf("甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸")
-            val diZhi = arrayOf("子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥")
-            
-            // 年干支（简化计算）
-            val yearGan = tianGan[(year - 4) % 10]
-            val yearZhi = diZhi[(year - 4) % 12]
-            
-            // 月干支（简化计算）
-            val monthOffset = (year % 10) * 2 + month
-            val monthGan = tianGan[monthOffset % 10]
-            val monthZhi = diZhi[(month + 2 - 1) % 12]
-            
-            // 日干支（非常简化的计算，实际应该使用精确算法）
-            val dayOffset = ((year * 5 + month * 7 + day) % 10)
-            val dayGan = tianGan[dayOffset]
-            val dayZhi = diZhi[(month * 2 + day) % 12]
-            
-            // 时干支（如果有时辰信息）
-            var hourGan = "未知"
-            var hourZhi = "未知"
-            if (birthTime != null) {
-                val hour = try {
-                    if (birthTime.contains(":")) {
-                        birthTime.split(":")[0].toInt()
-                    } else {
-                        // 假设是中文时辰
-                        val timeZhi = arrayOf("子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥")
-                        val timeIndex = timeZhi.indexOf(birthTime.replace("时", ""))
-                        if (timeIndex >= 0) (timeIndex * 2) + 23 % 24 else 12
-                    }
-                } catch (e: Exception) {
-                    12 // 默认中午
-                }
-                
-                val hourOffset = (dayOffset * 2 + hour / 2) % 10
-                hourGan = tianGan[hourOffset]
-                hourZhi = diZhi[(hour + 1) / 2 % 12]
-            }
-            
-            // 构建八字命盘
-            baziResponse.append("您的八字：$yearGan$yearZhi $monthGan$monthZhi $dayGan$dayZhi")
-            if (hourGan != "未知") {
-                baziResponse.append(" $hourGan$hourZhi")
-            }
-            baziResponse.append("\n\n")
-            
-            // 简单计算五行数量（实际应参考天干地支对应的五行）
-            wuxingCount[yearGan.hashCode() % 5]++
-            wuxingCount[yearZhi.hashCode() % 5]++
-            wuxingCount[monthGan.hashCode() % 5]++
-            wuxingCount[monthZhi.hashCode() % 5]++
-            wuxingCount[dayGan.hashCode() % 5]++
-            wuxingCount[dayZhi.hashCode() % 5]++
-            if (hourGan != "未知") {
-                wuxingCount[hourGan.hashCode() % 5]++
-                wuxingCount[hourZhi.hashCode() % 5]++
-            }
-            
-            // 找出最强和最弱的五行
-            val maxIndex = wuxingCount.indices.maxByOrNull { wuxingCount[it] } ?: 0
-            val minIndex = wuxingCount.indices.minByOrNull { wuxingCount[it] } ?: 0
-            val strongestElement = wuxing[maxIndex]
-            val weakestElement = wuxing[minIndex]
-            
-            baziResponse.append("五行分析：\n")
-            for (i in wuxing.indices) {
-                baziResponse.append("${wuxing[i]}：")
-                repeat(wuxingCount[i]) { baziResponse.append("●") }
-                repeat(5 - wuxingCount[i]) { baziResponse.append("○") }
-                baziResponse.append("\n")
-            }
-            baziResponse.append("\n")
-            
-            // 日主分析
-            baziResponse.append("日主：$dayGan$dayZhi\n")
-            val dayMaster = when (dayGan) {
-                "甲", "乙" -> "木"
-                "丙", "丁" -> "火"
-                "戊", "己" -> "土"
-                "庚", "辛" -> "金"
-                "壬", "癸" -> "水"
-                else -> "未知"
-            }
-            
-            // 喜用神分析（简化）
-            baziResponse.append("喜用神：")
-            val likeElement = when (dayMaster) {
-                "木" -> "水、木" + if (wuxingCount[2] < 2) "、火" else ""
-                "火" -> "木、火" + if (wuxingCount[0] < 2) "、土" else ""
-                "土" -> "火、土" + if (wuxingCount[3] < 2) "、金" else ""
-                "金" -> "土、金" + if (wuxingCount[1] < 2) "、水" else ""
-                "水" -> "金、水" + if (wuxingCount[4] < 2) "、木" else ""
-                else -> "未知"
-            }
-            baziResponse.append("$likeElement\n")
-            
-            // 忌神分析（简化）
-            baziResponse.append("忌神：")
-            val dislikeElement = when (dayMaster) {
-                "木" -> "金" + if (wuxingCount[0] > 3) "、土" else ""
-                "火" -> "水" + if (wuxingCount[3] > 3) "、金" else ""
-                "土" -> "木" + if (wuxingCount[1] > 3) "、水" else ""
-                "金" -> "火" + if (wuxingCount[4] > 3) "、木" else ""
-                "水" -> "土" + if (wuxingCount[2] > 3) "、火" else ""
-                else -> "未知"
-            }
-            baziResponse.append("$dislikeElement\n\n")
-        } else {
-            // 默认命盘（没有生日信息）
-            baziResponse.append("由于缺少出生日期信息，无法生成完整八字命盘。以下是基于一般性原则的分析。\n\n")
-            
-            // 生成随机五行分布
-            for (i in wuxing.indices) {
-                wuxingCount[i] = random.nextInt(5) + 1
-            }
-            
-            // 定义随机的最强和最弱五行
-            val maxIndex = wuxingCount.indices.maxByOrNull { wuxingCount[it] } ?: 0
-            val minIndex = wuxingCount.indices.minByOrNull { wuxingCount[it] } ?: 0
-            val strongestElement = wuxing[maxIndex]
-            val weakestElement = wuxing[minIndex]
-        }
-
-        // 获取最强和最弱五行作为字段存储，避免修改总结部分的代码
-        val maxIndex = wuxingCount.indices.maxByOrNull { wuxingCount[it] } ?: 0
-        val minIndex = wuxingCount.indices.minByOrNull { wuxingCount[it] } ?: 0
-        val strongest = wuxing[maxIndex]
-        val weakest = wuxing[minIndex]
-        
-        // 性格分析
-        baziResponse.append("【性格分析】\n")
-        val personalityTraits = listOf(
-            "您性格中兼具理性与感性，能够在不同场合展现不同的一面。",
-            "您处事稳健，不急不躁，能够沉着应对各种挑战。",
-            "您具有较强的适应能力，在变化的环境中能够迅速调整自己。",
-            "您思维灵活，善于从多角度分析问题，寻找解决方案。",
-            "您有较强的自我意识，明确自己的目标和方向。",
-            "您重视人际关系，善于与人沟通，建立良好的人际网络。",
-            "您处事谨慎，喜欢深思熟虑后再行动。",
-            "您有一定的创新精神，不满足于常规，喜欢尝试新事物。"
-        )
-        
-        // 根据性别选择不同的性格描述（如果有性别信息）
-        val genderSpecificTraits = if (gender == "男") {
-            listOf(
-                "作为男性，您展现出果断和坚毅的特质，决策力较强。",
-                "您有保护他人的本能，在关键时刻能够挺身而出。",
-                "您较为理性，追求事业上的成就和社会认可。"
-            )
-        } else if (gender == "女") {
-            listOf(
-                "作为女性，您展现出细腻和洞察力，善于感知他人情绪。",
-                "您平衡了柔和与坚韧的特质，面对困难不轻易退缩。",
-                "您有较强的情感表达能力，善于维系人际关系。"
-            )
-        } else {
-            listOf(
-                "您平衡了阴阳特质，既有决断力又有细腻的一面。",
-                "您在不同场合能够展现不同的性格特点，适应性强。",
-                "您的处事风格灵活多变，能够根据情况调整自己的行为模式。"
-            )
-        }
-        
-        // 随机选择3-5个性格特质
-        val selectedTraits = (personalityTraits.shuffled(random).take(3) + 
-                             genderSpecificTraits.shuffled(random).take(1)).shuffled()
-        selectedTraits.forEach { 
-            baziResponse.append("$it\n") 
-        }
-        baziResponse.append("\n")
-        
-        // 事业分析
-        baziResponse.append("【事业分析】\n")
-        val careerAnalysis = listOf(
-            "您适合在需要创造力和独立思考的领域发展，如设计、研发或创意行业。",
-            "您具有较强的分析能力，适合从事需要数据分析和逻辑思考的工作，如金融、研究或IT领域。",
-            "您的沟通能力和人际关系处理能力较强，适合需要团队合作和客户沟通的工作，如销售、市场或公关。",
-            "您做事细致耐心，适合需要精确和专注的工作，如技术类或专业服务类工作。",
-            "您有领导天赋，适合管理岗位或创业，能够带领团队实现目标。",
-            "您对细节有敏锐洞察力，适合质量控制或审计类工作。",
-            "您求知欲强，适合持续学习和研究的领域，如学术研究或教育行业。"
-        )
-        
-        // 随机选择2-3个事业特点
-        careerAnalysis.shuffled(random).take(random.nextInt(2) + 2).forEach {
-            baziResponse.append("$it\n")
-        }
-        
-        // 添加事业发展周期
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val careerPeriods = listOf(
-            "近期（${currentYear}-${currentYear+2}年）是您事业发展的关键期，可能面临重要选择或转折。",
-            "未来3-5年（${currentYear}-${currentYear+4}年）是您事业稳步上升的阶段，适合稳扎稳打，积累经验和资源。",
-            "${currentYear+1}年将是您事业变动较大的一年，可能有职位变动或工作性质的改变。",
-            "${currentYear+2}-${currentYear+5}年期间，您的事业将进入一个新的发展周期，有望获得突破性进展。"
-        )
-        
-        // 随机选择一个事业发展周期描述
-        baziResponse.append("\n" + careerPeriods[random.nextInt(careerPeriods.size)] + "\n\n")
-        
-        // 财运分析
-        baziResponse.append("【财运分析】\n")
-        val wealthAnalysis = listOf(
-            "您的财运与事业发展密切相关，事业有成，财运自然随之而来。",
-            "您的财运起伏较大，需要注重稳健理财和风险控制。",
-            "您有一定的理财天赋，但需要克制冲动消费的倾向。",
-            "您适合长期稳健的投资策略，不适合短期投机行为。",
-            "您的偏财运较好，可能通过副业或投资获得额外收入。",
-            "您的正财运稳定，通过努力工作能获得稳定的收入增长。",
-            "您需要注意财务规划，建立完善的储蓄和投资体系。"
-        )
-        
-        // 随机选择2-3个财运特点
-        wealthAnalysis.shuffled(random).take(random.nextInt(2) + 2).forEach {
-            baziResponse.append("$it\n")
-        }
-        
-        // 财运时期
-        val wealthPeriods = listOf(
-            "${currentYear}年下半年至${currentYear+1}年初是您财运较好的时期，适合适度投资或理财。",
-            "${currentYear+1}年中期可能出现财务波动，建议提前做好准备，避免大额开支。",
-            "${currentYear+2}-${currentYear+3}年期间财运呈上升趋势，可能有意外收获或投资回报。",
-            "近期到${currentYear+1}年是积累财富的重要阶段，建议增加储蓄比例，减少不必要开支。"
-        )
-        
-        // 随机选择一个财运时期描述
-        baziResponse.append("\n" + wealthPeriods[random.nextInt(wealthPeriods.size)] + "\n\n")
-        
-        // 感情分析
-        baziResponse.append("【感情分析】\n")
-        val loveAnalysis = if (gender == "男") {
-            listOf(
-                "您在感情中较为理性，希望建立稳定和谐的关系。",
-                "您重视忠诚和信任，寻找能够相互理解和支持的伴侣。",
-                "您在感情中可能有一定的保守倾向，不轻易表达内心情感。",
-                "您需要在感情中学习更多地表达关心和情感，增进与伴侣的交流。",
-                "您适合与性格温和、理解力强的伴侣相处。",
-                "您的感情观较为传统，重视家庭和责任。"
-            )
-        } else if (gender == "女") {
-            listOf(
-                "您在感情中细腻敏感，期待被理解和尊重。",
-                "您寻找能够给予安全感并尊重您独立性的伴侣。",
-                "您的情感表达丰富，但有时可能过于敏感。",
-                "您在感情中需要建立良好的沟通机制，避免误解。",
-                "您适合与稳重可靠、情感表达能力强的伴侣相处。",
-                "您在感情中既渴望亲密又保持一定的独立空间。"
-            )
-        } else {
-            listOf(
-                "您在感情中寻求平等和相互尊重的关系。",
-                "您重视情感交流和共同成长，期待与伴侣共同进步。",
-                "您的感情观较为成熟，能够平衡情感需求和现实考量。",
-                "您适合与性格互补、能够理解您内心需求的伴侣相处。",
-                "您在感情中需要建立有效的沟通方式，表达真实需求。",
-                "您渴望稳定而有深度的感情关系，不喜欢肤浅的交往。"
-            )
-        }
-        
-        // 随机选择2-3个感情特点
-        loveAnalysis.shuffled(random).take(random.nextInt(2) + 2).forEach {
-            baziResponse.append("$it\n")
-        }
-        
-        // 感情发展
-        val lovePeriods = listOf(
-            "${currentYear}-${currentYear+1}年是您感情发展的重要时期，可能遇到重要的人或关系出现转折。",
-            "未来两年内，您的感情生活可能经历一些考验，需要耐心和沟通来维系关系。",
-            "${currentYear+1}年下半年至${currentYear+2}年是您感情状况改善的时期，单身者有望遇到心仪对象。",
-            "近期感情状况较为稳定，适合深化现有关系或认真思考未来规划。"
-        )
-        
-        // 随机选择一个感情时期描述
-        baziResponse.append("\n" + lovePeriods[random.nextInt(lovePeriods.size)] + "\n\n")
-        
-        // 健康分析
-        baziResponse.append("【健康分析】\n")
-        val healthAnalysis = listOf(
-            "您的体质基本健康，但需要注意劳逸结合，避免过度疲劳。",
-            "您可能对季节变化较为敏感，季节交替时应特别注意身体调适。",
-            "您的消化系统可能是健康的薄弱环节，应注意饮食规律和质量。",
-            "您的呼吸系统需要关注，建议定期进行有氧运动增强肺活量。",
-            "您可能有情绪波动引起的身体不适，建议学习情绪管理和放松技巧。",
-            "您的免疫力总体良好，但压力过大时可能出现免疫功能下降。",
-            "您应特别注意心血管健康，定期检查并保持适度运动。"
-        )
-        
-        // 随机选择2个健康提示
-        healthAnalysis.shuffled(random).take(2).forEach {
-            baziResponse.append("$it\n")
-        }
-        
-        // 健康建议
-        baziResponse.append("\n建议：\n")
-        val healthAdvice = listOf(
-            "保持规律作息，确保充足睡眠。",
-            "均衡饮食，增加蔬果摄入，减少高油高糖食品。",
-            "坚持适度运动，每周至少3次30分钟以上的有氧活动。",
-            "定期体检，做到疾病早发现早治疗。",
-            "学习压力管理技巧，如冥想、深呼吸或正念练习。",
-            "保持良好心态，避免长期情绪低落或过度焦虑。",
-            "根据季节变化调整生活习惯，增强身体适应能力。"
-        )
-        
-        // 随机选择3个健康建议
-        healthAdvice.shuffled(random).take(3).forEach {
-            baziResponse.append("- $it\n")
-        }
-        baziResponse.append("\n")
-        
-        // 总结和建议
-        baziResponse.append("【总结和建议】\n")
-        val summaryAdvice = if (birthDate != null) {
-            """
-            综合八字分析，您的命盘显示您具有${if (random.nextBoolean()) "较为平衡" else "略有起伏"}的人生轨迹。
-            
-            优势在于${if (strongest == "金") "果断决策和执行力" 
-                    else if (strongest == "木") "创新思维和适应能力"
-                    else if (strongest == "水") "智慧和洞察力"
-                    else if (strongest == "火") "激情和表达能力"
-                    else "稳重和耐心"}，
-                    
-            需要补足的是${if (weakest == "金") "坚持和规划能力"
-                    else if (weakest == "木") "灵活性和开放思维"
-                    else if (weakest == "水") "情感表达和直觉"
-                    else if (weakest == "火") "主动性和热情"
-                    else "踏实和耐心"}。
-            
-            未来${currentYear}-${currentYear+3}年是您人生的关键期，建议:
-            
-            1. 发挥${strongest}的优势，在事业上寻求突破和发展。
-            2. 注意弥补${weakest}的不足，通过学习和实践提升相关能力。
-            3. 在人际关系中保持真诚和开放态度，建立有益的社交网络。
-            4. 健康方面保持警惕，建立良好的生活习惯和定期检查。
-            5. 财务上做好规划，平衡收入与支出，适度投资未来。
-            
-            记住，八字只是参考，您的努力和选择才是决定命运的关键因素。
-            """
-        } else {
-            """
-            虽然缺少完整的出生信息，但基于一般命理原则，每个人都有自己的优势和挑战。
-            
-            建议您:
-            
-            1. 寻找并发挥自身优势，在适合的领域深耕发展。
-            2. 认识自身不足，通过学习和实践不断提升和完善。
-            3. 在人际关系中保持真诚和开放态度，建立有益的社交网络。
-            4. 关注身心健康，建立良好的生活习惯和积极的心态。
-            5. 做好财务规划，平衡当下享受与未来投资。
-            
-            命运掌握在自己手中，积极的态度和持续的努力才是改变命运的关键。
-            """
-        }
-        
-        baziResponse.append(summaryAdvice.trimIndent())
-        
-        return baziResponse.toString()
-    }
-
-    /**
-     * 模拟紫微斗数响应
-     */
-    private fun simulateZiweiResponse(prompt: String): String {
-        // 简单的紫微斗数响应实现
-        return """
-            【命盘分析】
-            您的紫微命盘显示命宫有紫微星坐守，代表您具有较强的领导力和责任感。
-            三方四正有吉星拱照，暗示您一生中能得到贵人相助。
-            
-            【宫位解析】
-            命宫：紫微星主照，性格刚毅，具有领导才能。
-            财帛宫：武曲星坐守，财运稳定，善于理财。
-            官禄宫：天府星照耀，事业发展平稳，有升迁机会。
-            福德宫：左辅星入驻，内心善良，乐于助人。
-            
-            【流年运势】
-            今年大运与流年相合，整体运势较为顺遂。
-            事业上有发展机会，适合稳扎稳打。
-            财运平稳，宜保守投资，避免冒险。
-            感情方面可能有波折，需要耐心沟通。
-            
-            【建议】
-            1. 发挥领导才能，主动承担责任
-            2. 注重人际关系的维护，广结善缘
-            3. 保持稳健的理财习惯，避免投机
-            4. 关注健康，注意劳逸结合
-            5. 在感情中增进沟通，避免固执己见
-            
-            【总结】
-            您的紫微命盘显示，您是个有责任感、能力强的人，通过自身努力能够获得稳定的发展。只要充分发挥自己的优势，并且注意调整不足，一定能获得成功。简单说，保持踏实努力的态度，好运自然会来。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟手相占卜响应
-     */
-    private fun simulatePalmistryResponse(prompt: String): String {
-        // 简单的手相响应实现
-        return """
-            【掌纹分析】
-            您的生命线较长且清晰，表示健康状况良好，生命力旺盛。
-            智慧线平直且深，显示您思维清晰，逻辑性强。
-            感情线丰满有力，代表情感丰富，重视感情生活。
-            
-            【手型解读】
-            您的手型属于混合型，兼具实用性和灵活性。
-            指节较长，显示您做事细致，有条理性。
-            手掌弹性适中，暗示您性格平和，适应能力强。
-            
-            【综合分析】
-            从您的手相来看，您是一个理性与感性平衡的人。
-            工作中能够条理清晰地处理问题，有组织能力。
-            情感生活丰富多彩，重视与他人的情感联系。
-            健康状况总体良好，但需注意定期休息，避免过度疲劳。
-            
-            【建议】
-            1. 充分发挥您的组织能力，可在团队中担任协调角色
-            2. 平衡工作与生活，避免过度劳累
-            3. 在情感关系中保持开放态度，加强沟通
-            4. 定期进行身体检查，保持健康生活习惯
-            
-            【总结】
-            简单来说，您的手相显示您是个能力全面、情感丰富的人，只要注意劳逸结合，未来的发展前景非常光明。记住，手相只是参考，最终的命运掌握在自己手中。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟面相占卜响应
-     */
-    private fun simulateFaceReadingResponse(prompt: String): String {
-        // 简单的面相响应实现
-        return """
-            【面相总论】
-            您的面相端正匀称，五官协调，属于福相。
-            额头饱满宽阔，显示智慧充足，思维活跃。
-            眉毛清秀有力，代表决策能力强，具有领导气质。
-            鼻梁高挺，鼻翼适中，财运良好，事业有成。
-            
-            【性格分析】
-            从面相来看，您性格坚毅，有较强的责任感。
-            做事认真细致，不轻言放弃，具有毅力。
-            善于交际，人缘较好，能够获得他人支持。
-            有一定的进取心，追求事业上的成功。
-            
-            【运势解读】
-            事业运：面相显示您适合管理工作，具有领导才能。
-            财运：财库饱满，理财能力强，收入稳定。
-            感情运：感情生活较为顺利，能够吸引异性。
-            健康运：体质较好，但需注意消化系统。
-            
-            【建议】
-            1. 发挥领导才能，积极承担责任
-            2. 保持良好的人际关系，广结善缘
-            3. 注意饮食规律，保护消化系统
-            4. 适度锻炼，增强体质
-            
-            【总结】
-            总体而言，您的面相显示您是个有能力、有福气的人。只要保持积极的心态和良好的习惯，一定能够获得成功和幸福。面相虽然重要，但后天的努力同样能改变命运，希望您珍惜自身优势，不断进步。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟解梦响应
-     */
-    private fun simulateDreamInterpretationResponse(prompt: String): String {
-        // 从提示中提取梦境内容
-        val dreamMatch = Regex("梦见([^，。？！\n]+)").find(prompt)
-        val dreamContent = dreamMatch?.groupValues?.get(1) ?: "未知梦境"
-        
-        // 简单的解梦响应实现
-        return """
-            【梦境解析】
-            您梦见"$dreamContent"，这个梦境在心理学上有着特殊的象征意义。
-            梦是潜意识的表达，反映了您内心深处的想法和情感。
-            
-            【象征意义】
-            从象征学角度看，这个梦可能代表着您内心的期望或忧虑。
-            梦中的元素与您当前生活中的某些事件或情感有关。
-            这不应该被视为预兆，而是您内心想法的投射。
-            
-            【心理分析】
-            从心理分析角度看，这个梦可能反映了您近期的心理状态。
-            梦中的情绪和场景与您的现实生活有着微妙的联系。
-            了解这些联系有助于您更好地理解自己的内心世界。
-            
-            【建议】
-            1. 记录梦境，寻找与现实生活的联系
-            2. 关注梦中的情绪，理解内心真实感受
-            3. 不必过度解读梦境，保持平和心态
-            4. 如果梦境反复出现，可能需要关注现实中的相关问题
-            
-            【总结】
-            简单来说，您的梦反映了内心的某些想法和情感，它既不是预兆也不是警示，只是潜意识的自然表达。通过理解梦境，您可以更好地了解自己，但不必过度担忧。大多数梦境只是大脑处理信息的方式，保持积极心态才是最重要的。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟黄历/择日响应
-     */
-    private fun simulateAlmanacResponse(prompt: String): String {
-        // 获取当前日期
-        val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH) + 1
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-        
-        // 使用确定性算法生成宜忌
-        // 结合年月日以及当年的第几天，确保每天都不同
-        val seed = (year * 10000 + month * 100 + day) * dayOfYear
-        val random = Random(seed.toLong())
-        
-        // 扩大宜忌活动的范围，增加变化性
-        val goodActivities = listOf(
-            "祭祀", "出行", "开业", "安床", "搬家", "结婚", "装修", "开工", "签约", "入宅",
-            "祈福", "求嗣", "纳财", "开张", "交易", "立券", "会友", "谢土", "纳畜", "牧养",
-            "起基", "修造", "动土", "上梁", "栽种", "纳采", "冠笄", "订婚", "嫁娶", "移徙"
-        )
-        val badActivities = listOf(
-            "动土", "安葬", "修造", "开张", "入学", "求医", "交易", "诉讼", "远行", "开仓",
-            "出行", "赴任", "修坟", "破土", "伐木", "架马", "安门", "行船", "掘井", "乘船",
-            "拆卸", "破屋", "开渠", "筑堤", "穿井", "造桥", "造船", "针灸", "放水", "纳采"
-        )
-        
-        // 使用不同的随机种子选择不同数量的项目
-        val goodRandom = Random((seed + 1).toLong())
-        val badRandom = Random((seed + 2).toLong())
-        val todayGood = goodActivities.shuffled(goodRandom).take(goodRandom.nextInt(4) + 2) // 2-5项
-        val todayBad = badActivities.shuffled(badRandom).take(badRandom.nextInt(4) + 2) // 2-5项
-        
-        // 生成不同的吉凶方位
-        // 为每个方位使用不同的种子
-        val directions = listOf("东", "南", "西", "北", "东南", "西南", "东北", "西北")
-        val directionLuck = mutableMapOf<String, String>()
-        
-        for ((index, direction) in directions.withIndex()) {
-            // 使用不同的公式计算每个方位的吉凶
-            val dirSeed = seed + index * 17 // 使用质数17增加变化性
-            val isLucky = when {
-                (dirSeed % 7 == 0) -> true  // 用7作为除数
-                (dirSeed % 5 == 1) -> true  // 用5作为除数，余1判定
-                (dirSeed % 3 == 2) -> true  // 用3作为除数，余2判定
-                else -> false
-            }
-            directionLuck[direction] = if (isLucky) "吉" else "凶"
-        }
-        
-        // 生成吉日与凶日的判断
-        // 使用年月日的组合，确保每天结果不同
-        val isLuckyDay = when {
-            (month * day) % 6 == 0 -> "黄道吉日"   // 月日乘积被6整除
-            (month + day) % 5 == 0 -> "黄道吉日"   // 月日之和被5整除
-            (dayOfYear % 7) <= 2 -> "黄道吉日"     // 一年中每7天有3天是吉日
-            else -> "普通日子"
-        }
-        
-        // 添加不同的日建和日禄
-        val tiangan = arrayOf("甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸")
-        val dizhi = arrayOf("子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥")
-        
-        // 基于日期计算干支索引
-        val tianganIndex = (dayOfYear + year % 10) % 10
-        val dizhiIndex = (dayOfYear + year % 12) % 12
-        
-        val dayGanzhi = "${tiangan[tianganIndex]}${dizhi[dizhiIndex]}日"
-        
-        // 基于日期生成每日宜出行方向
-        val travelRandom = Random((seed + 5).toLong())
-        val travelDirections = directions.shuffled(travelRandom).take(2)
-        
-        // 基于日期生成运势评级
-        val luckLevel = when {
-            (seed % 15 == 0) -> "极好"   // 大约1/15的概率
-            (seed % 10 == 1) -> "很好"   // 大约1/10的概率
-            (seed % 7 <= 2) -> "不错"    // 大约3/7的概率
-            (seed % 5 <= 2) -> "一般"    // 大约3/5的概率
-            else -> "有起伏"              // 其余情况
-        }
-        
-        // 使用更多变化的格式和内容生成回复
-        return """
-            【今日运势 - ${year}年${month}月${day}日】
-            ${dayGanzhi} ${isLuckyDay}
-            
-            【吉凶提示】
-            宜：${todayGood.joinToString("、")}
-            忌：${todayBad.joinToString("、")}
-            
-            【方位吉凶】
-            东方：${directionLuck["东"]} | 南方：${directionLuck["南"]}
-            西方：${directionLuck["西"]} | 北方：${directionLuck["北"]}
-            东南：${directionLuck["东南"]} | 西南：${directionLuck["西南"]}
-            东北：${directionLuck["东北"]} | 西北：${directionLuck["西北"]}
-            
-            【今日宜出行方向】
-            ${travelDirections.joinToString("、")}方向吉利，适合出行。
-            
-            【吉时】
-            ${dizhi[random.nextInt(dizhi.size)]}时、${dizhi[random.nextInt(dizhi.size)]}时、${dizhi[random.nextInt(dizhi.size)]}时
-            
-            【今日财位】
-            ${directions.shuffled(Random((seed + 3).toLong())).first()}方位为财位，可摆放招财物品。
-            
-            【每日建议】
-            今天适合${if (todayGood.isNotEmpty()) todayGood.shuffled().first() else "休息"}，
-            不宜${if (todayBad.isNotEmpty()) todayBad.shuffled().first() else "冒险"}。
-            ${if (random.nextBoolean())
-                "早起有利于提升今日运势。"
-            else
-                "做事保持谨慎态度会更有利。"
-            }
-            
-            【金钱运】
-            ${listOf("有意外收获的可能", "财运平平，量入为出", "注意避免冲动消费", "适合投资理财", "宜守不宜进").shuffled(Random((seed + 4).toLong())).first()}
-            
-            【事业运】
-            ${listOf("工作进展顺利", "可能有新机遇出现", "适合开展新项目", "维持现状为宜", "暂避锋芒，稳守为主").shuffled(Random((seed + 5).toLong())).first()}
-            
-            【桃花运】
-            ${listOf("桃花运旺盛", "异性缘佳", "平淡无奇", "注意避免情感纠纷", "适合增进与伴侣感情").shuffled(Random((seed + 6).toLong())).first()}
-            
-            【健康指数】
-            ${60 + random.nextInt(41)}% - ${listOf("注意饮食规律", "适当运动有益健康", "避免过度劳累", "注意保暖", "保持良好心态").shuffled(Random((seed + 7).toLong())).first()}
-            
-            【幸运颜色】
-            ${listOf("红色", "蓝色", "黄色", "绿色", "紫色", "橙色", "粉色", "白色", "黑色", "金色").shuffled(Random((seed + 8).toLong())).take(2).joinToString("、")}
-            
-            【总结】
-            今天整体运势${luckLevel}，
-            ${listOf(
-                "建议保持平和心态，按计划行事。",
-                "宜静不宜动，适合思考和规划。",
-                "可大胆行动，把握机会。",
-                "中规中矩，不宜冒险。",
-                "谨慎行事，避免重大决策。"
-            ).shuffled(Random((seed + 9).toLong())).first()}
-            记住，黄历只是参考，真正决定一天好坏的是您的态度和行动。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟数字命理响应
-     */
-    private fun simulateNumerologyResponse(prompt: String): String {
-        // 简单的数字命理响应实现
-        return """
-            【数字能量】
-            根据您提供的信息，您的生命数字为7。
-            数字7象征着分析、智慧、洞察力和内省。
-            拥有生命数字7的人通常具有强大的分析能力和直觉。
-            
-            【性格特质】
-            您天生具有探索精神，热爱研究和学习。
-            思维深刻，善于思考人生哲理和深层次问题。
-            独立性强，喜欢独处，享受精神世界的充实。
-            直觉敏锐，常常能感知到他人无法察觉的细节。
-            
-            【人生使命】
-            您的使命在于探索真相，追求智慧和知识。
-            通过深入思考和研究，为世界提供独特见解。
-            帮助他人看清事物本质，传递智慧和洞察力。
-            
-            【优势与挑战】
-            优势：分析能力强，思维深刻，直觉敏锐。
-            挑战：可能过于沉浸在自己的世界，与现实脱节。
-            有时显得疏远和神秘，不易与他人建立亲密关系。
-            
-            【建议】
-            1. 保持好奇心和探索精神，持续学习和成长
-            2. 适当走出内心世界，增进与他人的交流和联系
-            3. 将您的洞察力和智慧应用于实际生活中
-            4. 寻找平衡点，兼顾理想与现实
-            
-            【总结】
-            作为生命数字7的人，您具有深刻的思想和敏锐的洞察力。虽然有时可能显得疏远，但您的智慧和独特视角是宝贵的礼物。简单来说，您是个思想家，通过探索和思考为这个世界带来独特价值。接受自己的与众不同，同时不忘与他人建立联系，您的人生将更加充实和平衡。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟奇门遁甲响应
-     */
-    private fun simulateQimenResponse(prompt: String): String {
-        // 简单的奇门遁甲响应实现
-        return """
-            【局势分析】
-            当前奇门局为休门伏吟，坎宫值符。
-            天盘与地盘呈现天蓬临玄武之象。
-            局中天心回向，显示变动之机。
-            
-            【门户解析】
-            休门值符，主吉门吉神相会，利于休养生息。
-            死门值使，暗示阻滞之象，宜静不宜动。
-            惊门入离，示警醒之意，需保持警觉。
-            
-            【九星解读】
-            天蓬星入首，主智慧谋略，利于思考和计划。
-            天芮星伏宫，暗示稳固基础，固本培元。
-            天冲星化气，示变动迅速，需把握时机。
-            
-            【问题解答】
-            对于您所咨询的事项，当前局势显示：
-            时机尚未成熟，需再观察一段时间。
-            暂时不宜大动作，可做小范围尝试。
-            有贵人相助迹象，可寻求智者建议。
-            
-            【趋吉避凶】
-            宜：思考计划、修身养性、寻求指导
-            忌：冒然行动、贸然投资、激进决策
-            
-            【总结】
-            此局显示当前形势暂未明朗，需保持观望态度。
-            休门值符，宜休养生息；死门值使，不宜妄动。
-            简言之，目前是思考和准备的时期，而非行动的时刻。
-            待局势明朗后再做决断，将获得更好结果。
-        """.trimIndent()
-    }
-    
-    /**
-     * 模拟通用响应
-     */
-    private fun simulateGenericResponse(prompt: String): String {
-        // 通用响应实现
-        return """
-            【综合分析】
-            根据您提供的信息，以下是相关分析和建议。
-            请注意，这是基于一般原则的分析，仅供参考。
-            
-            【运势解读】
-            近期运势平稳，有小幅波动但总体向好。
-            工作或学习方面可能面临一些挑战，需要保持耐心。
-            人际关系整体和谐，适合巩固现有关系网络。
-            健康状况良好，但需注意劳逸结合，避免过度疲劳。
-            
-            【发展方向】
-            当前阶段适合稳扎稳打，巩固基础，积累经验。
-            可以尝试拓展新的领域，但不宜冒进或过度冒险。
-            注重自我提升和学习，为未来发展打下坚实基础。
-            
-            【建议】
-            1. 保持积极心态，面对挑战时冷静分析
-            2. 制定合理的短期和长期目标，循序渐进
-            3. 注重身心平衡，适当放松和休息
-            4. 加强人际交往，建立有价值的人脉网络
-            5. 学会取舍，专注于最重要的事情
-            
-            【总结】
-            简单来说，当前是稳定发展的时期，不急不躁，踏实前行将获得良好结果。记住，命运掌握在自己手中，积极的态度和持续的努力才是成功的关键。
-        """.trimIndent()
-    }
-
-    /**
-     * 获取应用上下文
-     * 注意：这个方法可能返回null，调用时需要处理
-     */
-    private fun getApplicationContext(): Context? {
-        try {
-            // 尝试获取应用上下文
-            val activityThreadClass = Class.forName("android.app.ActivityThread")
-            val currentActivityThreadMethod = activityThreadClass.getDeclaredMethod("currentActivityThread")
-            currentActivityThreadMethod.isAccessible = true
-            val currentActivityThread = currentActivityThreadMethod.invoke(null)
-            
-            val getApplicationMethod = activityThreadClass.getDeclaredMethod("getApplication")
-            getApplicationMethod.isAccessible = true
-            return getApplicationMethod.invoke(currentActivityThread) as? Context
-        } catch (e: Exception) {
-            Log.e(TAG, "无法获取应用上下文: ${e.message}", e)
-            return null
         }
     }
 }
