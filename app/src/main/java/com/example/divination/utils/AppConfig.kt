@@ -18,7 +18,7 @@ object AppConfig {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 cachedVersionName = packageInfo.versionName
             } catch (e: Exception) {
-                cachedVersionName = "1.3" // 出错时使用默认值
+                cachedVersionName = "1.1.4" // 出错时使用默认值
             }
         }
         return cachedVersionName!!

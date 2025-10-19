@@ -10,32 +10,76 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp"
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp"
         tools:context=".ui.HomeFragment">
+        
+        <!-- 顶部装饰 -->
+        <View
+            android:id="@+id/topDecoration"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="@drawable/gradient_background"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+        
+        <!-- 应用标题 -->
+        <TextView
+            android:id="@+id/tvAppTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:text="✨ 玄机算命 ✨"
+            android:textColor="@color/white"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+        
+        <TextView
+            android:id="@+id/tvAppSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="探索命运的奥秘"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:alpha="0.9"
+            app:layout_constraintTop_toBottomOf="@id/tvAppTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardAlmanac"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
             style="@style/ModernCard"
+            app:cardElevation="8dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@id/tvAppSubtitle">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:id="@+id/tvAlmanacTitle"
-                    style="@style/TitleTextStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="老黄历"
+                    android:text="📅 今日黄历"
                     android:textAlignment="center"
-                    android:textSize="20sp"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/divination_primary"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -44,9 +88,10 @@
                     android:id="@+id/tvSolarDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:textSize="16sp"
+                    android:layout_marginTop="16dp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
+                    android:textAlignment="center"
                     android:textColor="@color/divination_text"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -57,9 +102,10 @@
                     android:id="@+id/tvLunarDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="14sp"
-                    android:textColor="@color/neutral_gray"
+                    android:layout_marginTop="6dp"
+                    android:textSize="15sp"
+                    android:textAlignment="center"
+                    android:textColor="@color/divination_text_secondary"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/tvSolarDate"
@@ -69,145 +115,280 @@
                     android:id="@+id/tvChineseZodiac"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="14sp"
-                    android:textColor="@color/neutral_gray"
+                    android:layout_marginTop="6dp"
+                    android:textSize="15sp"
+                    android:textAlignment="center"
+                    android:textColor="@color/divination_text_secondary"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/tvLunarDate"
-                    tools:text="生肖：兔" />
+                    tools:text="🐰 生肖：兔" />
 
                 <TextView
                     android:id="@+id/tvFiveElements"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="14sp"
-                    android:textColor="@color/neutral_gray"
+                    android:layout_marginTop="6dp"
+                    android:textSize="15sp"
+                    android:textAlignment="center"
+                    android:textColor="@color/divination_text_secondary"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/tvChineseZodiac"
-                    tools:text="五行：金" />
+                    tools:text="⚡ 五行：金" />
 
                 <View
                     android:id="@+id/divider"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:background="@color/card_border"
+                    android:layout_marginTop="16dp"
+                    android:background="@color/divider"
                     app:layout_constraintTop_toBottomOf="@+id/tvFiveElements" />
 
-                <TextView
-                    android:id="@+id/tvGoodTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="宜"
-                    android:textColor="@color/success_color"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/divider" />
-
-                <TextView
-                    android:id="@+id/tvGoodActivities"
+                <LinearLayout
+                    android:id="@+id/layoutGoodBad"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/divination_text"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/tvGoodTitle"
-                    tools:text="祭祀 祈福 纳采 订盟" />
-
-                <TextView
-                    android:id="@+id/tvBadTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="忌"
-                    android:textColor="@color/warning_color"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/tvGoodActivities" />
-
-                <TextView
-                    android:id="@+id/tvBadActivities"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/divination_text"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/tvBadTitle"
-                    tools:text="动土 破土 安葬 出行" />
+                    app:layout_constraintTop_toBottomOf="@+id/divider">
+                    
+                    <!-- 宜 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="8dp"
+                        android:background="@drawable/small_corner_radius">
+                        
+                        <TextView
+                            android:id="@+id/tvGoodTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="✓ 宜"
+                            android:textColor="@color/success_color"
+                            android:textSize="17sp"
+                            android:textStyle="bold"/>
+                        
+                        <TextView
+                            android:id="@+id/tvGoodActivities"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textColor="@color/divination_text"
+                            android:textSize="14sp"
+                            android:lineSpacingExtra="4dp"
+                            tools:text="祭祀 祈福 纳采 订盟"/>
+                    </LinearLayout>
+                    
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@color/divider"/>
+                    
+                    <!-- 忌 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+                        
+                        <TextView
+                            android:id="@+id/tvBadTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="✗ 忌"
+                            android:textColor="@color/error_color"
+                            android:textSize="17sp"
+                            android:textStyle="bold"/>
+                        
+                        <TextView
+                            android:id="@+id/tvBadActivities"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textColor="@color/divination_text"
+                            android:textSize="14sp"
+                            android:lineSpacingExtra="4dp"
+                            tools:text="动土 破土 安葬 出行"/>
+                    </LinearLayout>
+                </LinearLayout>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnChangeDate"
                     style="@style/ModernButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="选择日期"
+                    android:layout_marginTop="20dp"
+                    android:text="📆 选择其他日期"
+                    android:textSize="16sp"
                     android:backgroundTint="@color/colorPrimary"
+                    app:cornerRadius="10dp"
+                    app:icon="@android:drawable/ic_menu_my_calendar"
+                    app:iconGravity="textStart"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/tvBadActivities" />
+                    app:layout_constraintTop_toBottomOf="@+id/layoutGoodBad" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tvDivinationTitle"
-            style="@style/TitleTextStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="算命推荐"
-            android:textSize="20sp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="32dp"
+            android:text="🔮 开始算命"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/divination_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardAlmanac" />
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardDivination"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:id="@+id/layoutDivinationButtons"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            style="@style/ModernCard"
-            android:layout_marginTop="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvDivinationTitle">
 
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardChineseFortune"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                style="@style/ModernCard"
+                app:cardElevation="6dp"
+                app:cardCornerRadius="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnChineseFortune"
-                    style="@style/ModernButton"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/chinese_fortune"
-                    android:backgroundTint="@color/divination_primary"
-                    app:icon="@android:drawable/ic_menu_compass"
-                    app:iconGravity="start" />
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:gravity="center_vertical">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnWesternFortune"
-                    style="@style/ModernButton"
+                    <TextView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:text="☯"
+                        android:textSize="32sp"
+                        android:gravity="center"
+                        android:background="@drawable/card_gradient"
+                        android:textColor="@color/white"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/btnChineseFortune"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/chinese_fortune"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/divination_text"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="八字、紫微、周易等"
+                            android:textSize="14sp"
+                            android:textColor="@color/divination_text_secondary"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="→"
+                        android:textSize="24sp"
+                        android:textColor="@color/divination_primary"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardWesternFortune"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                style="@style/ModernCard"
+                app:cardElevation="6dp"
+                app:cardCornerRadius="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/western_fortune"
-                    android:backgroundTint="@color/divination_primary"
-                    app:icon="@android:drawable/ic_menu_myplaces"
-                    app:iconGravity="start" />
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:gravity="center_vertical">
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    <TextView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:text="⭐"
+                        android:textSize="32sp"
+                        android:gravity="center"
+                        android:background="@drawable/card_gradient"
+                        android:textColor="@color/white"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/btnWesternFortune"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/western_fortune"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/divination_text"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="塔罗牌、占星术、数字命理"
+                            android:textSize="14sp"
+                            android:textColor="@color/divination_text_secondary"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="→"
+                        android:textSize="24sp"
+                        android:textColor="@color/divination_primary"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView> 

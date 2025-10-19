@@ -10,26 +10,39 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:paddingBottom="24dp">
+        
+        <!-- 顶部渐变装饰 -->
+        <View
+            android:id="@+id/topDecoration"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:background="@drawable/gradient_background"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <TextView
             android:id="@+id/tvFeedbackTitle"
-            style="@style/TitleTextStyle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="意见反馈"
-            android:textSize="22sp"
-            android:textAlignment="center"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="48dp"
+            android:text="💬 意见反馈"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardFeedback"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
             style="@style/ModernCard"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvFeedbackTitle">
@@ -38,16 +51,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <!-- 联系方式 -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilContact"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="联系方式（选填）"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    android:layout_marginBottom="20dp"
+                    android:hint="📧 联系方式（选填）"
+                    style="@style/Widget.Divination.TextInputLayout">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etContact"
@@ -62,35 +75,42 @@
                     android:id="@+id/tvFeedbackTypeLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="反馈类型"
+                    android:text="📋 反馈类型"
                     android:textSize="16sp"
+                    android:textStyle="bold"
                     android:textColor="@color/divination_text"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="12dp" />
 
                 <RadioGroup
                     android:id="@+id/rgFeedbackType"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="20dp">
 
                     <RadioButton
                         android:id="@+id/rbBug"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="功能异常" />
+                        android:padding="8dp"
+                        android:textSize="15sp"
+                        android:text="🐛 功能异常" />
 
                     <RadioButton
                         android:id="@+id/rbSuggestion"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="功能建议"
+                        android:padding="8dp"
+                        android:textSize="15sp"
+                        android:text="💡 功能建议"
                         android:checked="true" />
 
                     <RadioButton
                         android:id="@+id/rbOther"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="其他问题" />
+                        android:padding="8dp"
+                        android:textSize="15sp"
+                        android:text="❓ 其他问题" />
                 </RadioGroup>
 
                 <!-- 反馈内容 -->
@@ -99,8 +119,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="请输入您的反馈内容"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    android:hint="✍️ 请输入您的反馈内容"
+                    style="@style/Widget.Divination.TextInputLayout">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etContent"
@@ -116,10 +136,9 @@
                     android:id="@+id/tvAppInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="应用信息将自动添加到反馈中"
-                    android:textSize="12sp"
-                    android:textColor="@color/neutral_gray"
-                    android:layout_marginBottom="16dp" />
+                    android:text="ℹ️ 应用信息将自动添加到反馈中"
+                    android:textSize="13sp"
+                    android:textColor="@color/divination_text_secondary" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -129,11 +148,15 @@
             android:id="@+id/btnSubmitFeedback"
             style="@style/ModernButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:layout_marginTop="24dp"
-            android:text="提交反馈"
-            android:textSize="16sp"
-            android:backgroundTint="@color/divination_primary"
+            android:text="📤 提交反馈"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/colorPrimary"
+            app:cornerRadius="12dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardFeedback" />
@@ -141,13 +164,14 @@
         <!-- 进度条 -->
         <ProgressBar
             android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="24dp"
             android:visibility="gone"
+            android:indeterminateTint="@color/colorPrimary"
             app:layout_constraintTop_toBottomOf="@+id/btnSubmitFeedback"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</ScrollView> 
+</ScrollView>

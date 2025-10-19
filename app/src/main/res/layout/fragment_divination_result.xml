@@ -11,52 +11,78 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:paddingBottom="24dp">
+        
+        <!-- 顶部渐变装饰 -->
+        <View
+            android:id="@+id/topDecoration"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:background="@drawable/gradient_background"
+            app:layout_constraintTop_toTopOf="parent"/>
+        
+        <!-- 成功图标 -->
+        <TextView
+            android:id="@+id/tvSuccessIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="✨"
+            android:textSize="56sp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardResult"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
             style="@style/ModernCard"
+            app:cardElevation="8dp"
+            app:cardCornerRadius="20dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@id/tvSuccessIcon">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:padding="24dp">
 
                 <TextView
                     android:id="@+id/tvResultTitle"
-                    style="@style/TitleTextStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:textAlignment="center"
-                    android:textSize="20sp"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/divination_text"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    tools:text="八字命理结果" />
+                    tools:text="🔮 八字命理结果" />
 
                 <TextView
                     android:id="@+id/tvResultDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:textAlignment="center"
-                    android:textSize="12sp"
-                    android:textColor="@color/neutral_gray"
+                    android:textSize="14sp"
+                    android:textColor="@color/divination_text_secondary"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/tvResultTitle"
-                    tools:text="分析时间：2023-05-18 14:30" />
+                    tools:text="📅 分析时间：2023-05-18 14:30" />
 
                 <com.example.divination.view.AstrologyChartView
                     android:id="@+id/astrologyChartView"
                     android:layout_width="0dp"
                     android:layout_height="300dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="20dp"
                     android:visibility="gone"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -66,8 +92,8 @@
                     android:id="@+id/divider"
                     android:layout_width="0dp"
                     android:layout_height="1dp"
-                    android:layout_marginTop="16dp"
-                    android:background="@color/card_border"
+                    android:layout_marginTop="20dp"
+                    android:background="@color/divider"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/astrologyChartView" />
@@ -77,10 +103,14 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardResultDetails"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="20dp"
             style="@style/ModernCard"
-            android:layout_marginTop="16dp"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardResult">
@@ -90,23 +120,50 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp" />
+                android:padding="20dp" />
 
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnShare"
-            style="@style/ModernButton"
+        <LinearLayout
+            android:id="@+id/actionButtons"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:layout_marginTop="24dp"
-            android:text="分享结果"
-            android:backgroundTint="@color/divination_primary"
-            app:icon="@android:drawable/ic_menu_share"
-            app:iconGravity="start"
+            android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/cardResultDetails" />
+            app:layout_constraintTop_toBottomOf="@+id/cardResultDetails">
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnShare"
+                style="@style/ModernButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="分享"
+                android:textSize="16sp"
+                android:backgroundTint="@color/colorPrimary"
+                app:cornerRadius="12dp"
+                app:icon="@android:drawable/ic_menu_share"
+                app:iconGravity="textStart"/>
+            
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                style="@style/ModernButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="保存"
+                android:textSize="16sp"
+                android:backgroundTint="@color/gold"
+                app:cornerRadius="12dp"
+                app:icon="@android:drawable/ic_menu_save"
+                app:iconGravity="textStart"/>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView> 

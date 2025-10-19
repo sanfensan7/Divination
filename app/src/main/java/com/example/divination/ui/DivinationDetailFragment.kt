@@ -297,19 +297,164 @@ class DivinationDetailFragment : Fragment() {
     private fun safeShowLoading(isLoading: Boolean) {
         if (!isActive || !isAdded || _binding == null) return
         try {
-            binding.progressBar.isVisible = isLoading
+            // 显示/隐藏加载卡片
+            binding.cardLoading.isVisible = isLoading
             binding.btnSubmit.isEnabled = !isLoading
             
-            // 添加AI思考时间提示
+            // 添加随机的加载提示文本
             if (isLoading) {
-                binding.tvLoadingHint.text = getString(R.string.ai_thinking_time, getMethodTimeout())
-                binding.tvLoadingHint.visibility = View.VISIBLE
-            } else {
-                binding.tvLoadingHint.visibility = View.GONE
+                binding.tvLoadingHint.text = getRandomLoadingHint()
+                startLoadingAnimation()
             }
         } catch (e: Exception) {
             // 忽略可能的异常
         }
+    }
+    
+    // 获取随机的加载提示文本
+    private fun getRandomLoadingHint(): String {
+        val hints = when (methodId) {
+            "bazi" -> listOf(
+                "🔮 正在推算八字命盘...",
+                "⚡ 天干地支排列中...",
+                "🌟 分析五行生克...",
+                "✨ 计算喜用神...",
+                "🎯 推演命运走势..."
+            )
+            "zhouyi" -> listOf(
+                "🔮 正在起卦问天...",
+                "☯ 推演卦象变化...",
+                "📿 解析爻辞含义...",
+                "✨ 占测吉凶祸福...",
+                "🎋 参悟易经智慧..."
+            )
+            "tarot" -> listOf(
+                "🔮 塔罗牌正在为您占卜...",
+                "🃏 解读牌面能量...",
+                "✨ 分析牌阵组合...",
+                "🌙 感应宇宙讯息...",
+                "💫 揭示命运真相..."
+            )
+            "astrology" -> listOf(
+                "🔮 计算星盘位置...",
+                "🌟 分析行星相位...",
+                "✨ 推演星座能量...",
+                "🌙 解读天象启示...",
+                "💫 预测运势走向..."
+            )
+            "ziwei" -> listOf(
+                "🔮 正在排紫微斗数盘...",
+                "⭐ 推算命宫星曜...",
+                "✨ 分析十二宫位...",
+                "🌟 解读星耀组合...",
+                "💫 预测人生格局..."
+            )
+            "dream" -> listOf(
+                "🔮 正在解析梦境...",
+                "💭 探索潜意识讯息...",
+                "✨ 分析梦境象征...",
+                "🌙 解读心灵密语...",
+                "💫 揭示梦境真意..."
+            )
+            "numerology" -> listOf(
+                "🔮 正在计算生命数字...",
+                "🔢 分析数字能量...",
+                "✨ 推演命运密码...",
+                "💫 解读数字奥秘...",
+                "🎯 揭示人生使命..."
+            )
+            else -> listOf(
+                "🔮 AI正在为您推算命运...",
+                "✨ 正在解析您的问题...",
+                "💫 推演命运轨迹中...",
+                "🌟 感应天地玄机...",
+                "🎯 为您揭示未来..."
+            )
+        }
+        return hints.random()
+    }
+    
+    // 启动加载动画（可以在这里添加更多动画效果）
+    private fun startLoadingAnimation() {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            // 为整个卡片添加淡入和缩放动画
+            val fadeInAnimation = android.view.animation.AnimationUtils.loadAnimation(
+                requireContext(), 
+                R.anim.fade_in
+            )
+            binding.cardLoading.startAnimation(fadeInAnimation)
+            
+            // 为进度条外圈添加旋转动画
+            val rotateAnimation = android.view.animation.AnimationUtils.loadAnimation(
+                requireContext(),
+                R.anim.rotate_animation
+            )
+            binding.progressBar.parent?.let { parent ->
+                if (parent is android.view.View) {
+                    parent.startAnimation(rotateAnimation)
+                }
+            }
+            
+            // 为提示文字添加脉动效果
+            val pulseAnimation = android.view.animation.AnimationUtils.loadAnimation(
+                requireContext(),
+                R.anim.pulse_animation
+            )
+            binding.tvLoadingHint.startAnimation(pulseAnimation)
+            
+            // 为三个小圆点添加错开的脉动动画
+            animateLoadingDots()
+        } catch (e: Exception) {
+            // 忽略可能的异常
+        }
+    }
+    
+    // 为加载指示点添加错开的动画效果
+    private fun animateLoadingDots() {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            val dot1 = binding.root.findViewById<View>(R.id.loadingDot1)
+            val dot2 = binding.root.findViewById<View>(R.id.loadingDot2)
+            val dot3 = binding.root.findViewById<View>(R.id.loadingDot3)
+            
+            // 为每个点创建脉动动画，但添加不同的延迟
+            dot1?.let { animateDot(it, 0) }
+            dot2?.let { animateDot(it, 200) }
+            dot3?.let { animateDot(it, 400) }
+        } catch (e: Exception) {
+            // 忽略可能的异常
+        }
+    }
+    
+    // 为单个圆点添加动画
+    private fun animateDot(dot: View, startDelay: Long) {
+        dot.postDelayed({
+            if (isActive && isAdded && _binding != null) {
+                dot.animate()
+                    .scaleX(1.5f)
+                    .scaleY(1.5f)
+                    .alpha(0.3f)
+                    .setDuration(600)
+                    .withEndAction {
+                        if (isActive && isAdded && _binding != null) {
+                            dot.animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .alpha(1f)
+                                .setDuration(600)
+                                .withEndAction {
+                                    // 循环动画
+                                    if (isActive && isAdded && _binding != null && binding.cardLoading.isVisible) {
+                                        animateDot(dot, 0)
+                                    }
+                                }
+                                .start()
+                        }
+                    }
+                    .start()
+            }
+        }, startDelay)
     }
     
     // 获取当前算命方法的超时时间（秒）

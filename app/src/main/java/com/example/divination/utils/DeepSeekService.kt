@@ -34,13 +34,12 @@ object DeepSeekService {
         return simulateBaziResponse(prompt)
     }
     
-    // 从本地存储获取API密钥
+    // 内置的 DeepSeek API 密钥
+    private const val DEEPSEEK_API_KEY = "sk-89f7a9dbb66f4a8e8682116c1b116257"
+    
+    // 获取API密钥
     private fun getApiKey(context: Context): String {
-        val prefs = context.getSharedPreferences("divination_prefs", Context.MODE_PRIVATE)
-        val apiKey = prefs.getString("api_key", "") ?: ""
-        
-        // 检查并清理API密钥中可能的非法字符（如换行符等）
-        return apiKey.trim().replace(Regex("\\s+"), "")
+        return DEEPSEEK_API_KEY
     }
     
     /**

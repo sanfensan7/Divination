@@ -11,13 +11,28 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:paddingBottom="24dp">
+        
+        <!-- 顶部渐变装饰 -->
+        <View
+            android:id="@+id/topDecoration"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:background="@drawable/gradient_background"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardMethod"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
             style="@style/ModernCard"
+            app:cardElevation="8dp"
+            app:cardCornerRadius="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <LinearLayout
@@ -25,65 +40,93 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
-                android:padding="16dp">
+                android:padding="24dp">
+                
+                <!-- 图标背景容器 -->
+                <FrameLayout
+                    android:layout_width="96dp"
+                    android:layout_height="96dp">
+                    
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/circle_background_outer"
+                        android:alpha="0.15"/>
+                    
+                    <View
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/circle_background_inner"/>
 
-                <ImageView
-                    android:id="@+id/ivMethodIcon"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:contentDescription="算命方法图标"
-                    android:background="@color/card_border"
-                    android:padding="8dp"
-                    tools:src="@drawable/ic_divination" />
+                    <ImageView
+                        android:id="@+id/ivMethodIcon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="算命方法图标"
+                        android:padding="4dp"
+                        tools:src="@drawable/ic_divination" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/tvMethodTitle"
-                    style="@style/TitleTextStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="16dp"
                     android:textAlignment="center"
-                    android:textSize="20sp"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/divination_text"
                     tools:text="八字命理" />
 
                 <TextView
                     android:id="@+id/tvMethodDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:textAlignment="center"
-                    android:textColor="@color/neutral_gray"
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="4dp"
+                    android:textColor="@color/divination_text_secondary"
                     tools:text="根据出生年月日时推算命运" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardInput"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="20dp"
             style="@style/ModernCard"
-            android:layout_marginTop="16dp"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardMethod">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:id="@+id/tvInputTitle"
-                    style="@style/TitleTextStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="请填写以下信息"
-                    android:textSize="16sp" />
+                    android:text="📝 请填写以下信息"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/divination_text" />
 
                 <LinearLayout
                     android:id="@+id/inputFieldsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="20dp"
                     android:orientation="vertical" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -92,37 +135,120 @@
             android:id="@+id/btnSubmit"
             style="@style/ModernButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="开始算命"
-            android:backgroundTint="@color/divination_primary"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="32dp"
+            android:text="✨ 开始算命"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/colorPrimary"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_media_play"
+            app:iconGravity="textStart"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardInput" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
+        <!-- 加载状态卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardLoading"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
             android:visibility="gone"
+            style="@style/ModernCard"
+            app:cardElevation="8dp"
+            app:cardCornerRadius="20dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnSubmit" />
+            app:layout_constraintTop_toBottomOf="@+id/btnSubmit">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:gravity="center"
+                android:background="@drawable/gradient_background"
+                android:alpha="0.95">
+                
+                <!-- 外圈装饰 -->
+                <FrameLayout
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:background="@drawable/circle_background_outer"
+                    android:alpha="0.2">
+                    
+                    <ProgressBar
+                        android:id="@+id/progressBar"
+                        style="?android:attr/progressBarStyle"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_gravity="center"
+                        android:indeterminateTint="@color/white"/>
+                </FrameLayout>
 
-        <TextView
-            android:id="@+id/tvLoadingHint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="AI思考中，请耐心等候..."
-            android:textColor="@color/divination_primary"
-            android:textSize="14sp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/progressBar" />
+                <TextView
+                    android:id="@+id/tvLoadingHint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="🔮 AI正在为您推算命运..."
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textAlignment="center"/>
+                    
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="✨ 请耐心等候，好运即将到来 ✨"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:alpha="0.9"
+                    android:textAlignment="center"/>
+                    
+                <!-- 脉动动画指示器 -->
+                <LinearLayout
+                    android:id="@+id/loadingDotsContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+                    
+                    <View
+                        android:id="@+id/loadingDot1"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/circle_background_outer"
+                        android:backgroundTint="@color/gold"/>
+                    
+                    <View
+                        android:id="@+id/loadingDot2"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/circle_background_outer"
+                        android:backgroundTint="@color/gold_light"/>
+                    
+                    <View
+                        android:id="@+id/loadingDot3"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/circle_background_outer"
+                        android:backgroundTint="@color/gold"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView> 

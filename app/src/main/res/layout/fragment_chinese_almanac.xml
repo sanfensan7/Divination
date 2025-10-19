@@ -11,27 +11,40 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp">
+        
+        <!-- 顶部渐变装饰 -->
+        <View
+            android:id="@+id/topDecoration"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:background="@drawable/gradient_background"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <TextView
             android:id="@+id/tvTitle"
-            style="@style/TitleTextStyle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="老黄历"
+            android:layout_marginTop="48dp"
+            android:text="📅 老黄历"
             android:textSize="24sp"
-            android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardCalendar"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
             style="@style/ModernCard"
-            android:layout_marginTop="8dp"
+            app:cardElevation="8dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvTitle">
@@ -46,10 +59,14 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardHeader"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
             style="@style/ModernCard"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardCalendar">
@@ -58,53 +75,57 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:id="@+id/tvSolarDate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="18sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="@color/divination_text"
-                    tools:text="2023年5月1日" />
+                    android:textColor="@color/divination_primary"
+                    tools:text="📆 2023年5月1日" />
 
                 <TextView
                     android:id="@+id/tvLunarDate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="8dp"
                     android:textSize="16sp"
-                    android:textColor="@color/neutral_gray"
-                    tools:text="农历四月初一" />
+                    android:textColor="@color/divination_text"
+                    tools:text="🌙 农历四月初一" />
 
                 <TextView
                     android:id="@+id/tvChineseZodiac"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:textSize="16sp"
-                    android:textColor="@color/neutral_gray"
-                    tools:text="生肖：兔" />
+                    android:textColor="@color/divination_text"
+                    tools:text="🐰 生肖：兔" />
 
                 <TextView
                     android:id="@+id/tvFiveElements"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="6dp"
                     android:textSize="16sp"
-                    android:textColor="@color/neutral_gray"
-                    tools:text="五行：木" />
+                    android:textColor="@color/divination_text"
+                    tools:text="⚡ 五行：木" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardGoodActivities"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
             style="@style/ModernCard"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardHeader">
@@ -113,22 +134,24 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp"
+                android:background="@drawable/small_corner_radius">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="宜"
+                    android:text="✓ 宜"
                     android:textColor="@color/success_color"
-                    android:textSize="18sp"
+                    android:textSize="19sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvGoodActivities"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:textSize="16sp"
+                    android:lineSpacingExtra="4dp"
                     android:textColor="@color/divination_text"
                     tools:text="祭祀 祈福 出行 嫁娶 开市" />
             </LinearLayout>
@@ -136,10 +159,14 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardBadActivities"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
             style="@style/ModernCard"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardGoodActivities">
@@ -148,22 +175,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="忌"
-                    android:textColor="@color/warning_color"
-                    android:textSize="18sp"
+                    android:text="✗ 忌"
+                    android:textColor="@color/error_color"
+                    android:textSize="19sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvBadActivities"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:textSize="16sp"
+                    android:lineSpacingExtra="4dp"
                     android:textColor="@color/divination_text"
                     tools:text="诉讼 安葬 破土 动工 开张" />
             </LinearLayout>
@@ -171,10 +199,14 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardDirection"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
             style="@style/ModernCard"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardBadActivities">
@@ -183,13 +215,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="方位"
-                    android:textSize="18sp"
+                    android:text="🧭 方位"
+                    android:textSize="19sp"
                     android:textStyle="bold"
                     android:textColor="@color/divination_text" />
 
@@ -305,11 +337,15 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardOther"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="24dp"
             style="@style/ModernCard"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -320,13 +356,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="其他信息"
-                    android:textSize="18sp"
+                    android:text="📌 其他信息"
+                    android:textSize="19sp"
                     android:textStyle="bold"
                     android:textColor="@color/divination_text" />
 
@@ -334,37 +370,37 @@
                     android:id="@+id/tvGodOfBaby"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:textSize="16sp"
                     android:textColor="@color/divination_text"
-                    tools:text="胎神：床头" />
+                    tools:text="👶 胎神：床头" />
 
                 <TextView
                     android:id="@+id/tvChongSha"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="8dp"
                     android:textSize="16sp"
                     android:textColor="@color/divination_text"
-                    tools:text="冲煞：冲蛇煞" />
+                    tools:text="⚠️ 冲煞：冲蛇煞" />
 
                 <TextView
                     android:id="@+id/tvYearStar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="8dp"
                     android:textSize="16sp"
                     android:textColor="@color/divination_text"
-                    tools:text="值年星：贪狼" />
+                    tools:text="⭐ 值年星：贪狼" />
 
                 <TextView
                     android:id="@+id/tvDayStar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="8dp"
                     android:textSize="16sp"
                     android:textColor="@color/divination_text"
-                    tools:text="值日星：角木蛟" />
+                    tools:text="✨ 值日星：角木蛟" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

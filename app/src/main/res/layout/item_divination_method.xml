@@ -6,22 +6,37 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     style="@style/ModernCard"
-    app:cardElevation="2dp"
-    app:strokeWidth="1dp"
-    app:strokeColor="@color/card_border">
+    app:cardElevation="6dp"
+    app:cardCornerRadius="16dp"
+    app:strokeWidth="0dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="20dp"
+        android:minHeight="180dp"
+        android:gravity="center">
 
+        <!-- 背景装饰 -->
+        <View
+            android:id="@+id/backgroundDecoration"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@drawable/card_gradient"
+            android:alpha="0.1"
+            app:layout_constraintTop_toTopOf="parent"/>
+        
         <FrameLayout
             android:id="@+id/iconContainer"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/tvMethodName">
 
             <!-- 底层圆形背景 -->
             <View
@@ -29,21 +44,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/circle_background_outer"
-                android:alpha="0.3" />
+                android:alpha="0.2" />
 
             <!-- 内层圆形背景 -->
             <View
                 android:id="@+id/iconBackgroundInner"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:layout_gravity="center"
                 android:background="@drawable/circle_background_inner" />
 
             <!-- 图标 -->
             <ImageView
                 android:id="@+id/ivMethodIcon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_gravity="center"
                 android:contentDescription="算命方法图标"
                 android:padding="2dp"
@@ -53,12 +68,13 @@
 
         <TextView
             android:id="@+id/tvMethodName"
-            style="@style/TitleTextStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:textAlignment="center"
-            android:textSize="16sp"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="@color/divination_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/iconContainer"
@@ -68,15 +84,17 @@
             android:id="@+id/tvMethodDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="2"
             android:textAlignment="center"
-            android:textSize="12sp"
-            android:textColor="@color/neutral_gray"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp"
+            android:textColor="@color/divination_text_secondary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvMethodName"
+            app:layout_constraintBottom_toBottomOf="parent"
             tools:text="根据出生年月日时推算命运" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

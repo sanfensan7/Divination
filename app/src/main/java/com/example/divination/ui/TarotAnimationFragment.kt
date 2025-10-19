@@ -681,10 +681,7 @@ class TarotAnimationFragment : Fragment() {
             )
             
             // 显示加载状态
-            safeSetViewVisibility(binding.progressBar, View.VISIBLE)
-            
-            // 添加AI思考时间提示
-            safeSetText(binding.tvInstructions, getString(R.string.ai_thinking_time, 80))
+            showLoadingAnimation(true)
             
             // 调用AI服务获取解读
             safePerformDivination(
@@ -696,7 +693,7 @@ class TarotAnimationFragment : Fragment() {
                 if (!isActive || !isAdded || _binding == null) return@safePerformDivination
                 
                 try {
-                    safeSetViewVisibility(binding.progressBar, View.GONE)
+                    showLoadingAnimation(false)
                     
                     if (error != null) {
                         safeSetText(binding.tvInstructions, "解读失败：${error.message?.take(50) ?: "未知错误"}")
@@ -709,15 +706,130 @@ class TarotAnimationFragment : Fragment() {
                     }
                 } catch (e: Exception) {
                     Log.e("TarotAnimation", "解读回调处理异常", e)
-                    safeSetViewVisibility(binding.progressBar, View.GONE)
+                    showLoadingAnimation(false)
                     safeSetText(binding.tvInstructions, "解读处理出错：${e.message?.take(50) ?: "未知错误"}")
                 }
             }
         } catch (e: Exception) {
             Log.e("TarotAnimation", "生成解读异常", e)
-            safeSetViewVisibility(binding.progressBar, View.GONE)
+            showLoadingAnimation(false)
             safeSetText(binding.tvInstructions, "生成解读出错：${e.message?.take(50) ?: "未知错误"}")
         }
+    }
+    
+    // 显示/隐藏加载动画
+    private fun showLoadingAnimation(show: Boolean) {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            if (show) {
+                // 显示加载卡片
+                binding.cardLoading.visibility = View.VISIBLE
+                binding.tvLoadingHint.text = getRandomTarotLoadingHint()
+                startTarotLoadingAnimation()
+            } else {
+                // 隐藏加载卡片
+                binding.cardLoading.visibility = View.GONE
+            }
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "显示加载动画异常", e)
+        }
+    }
+    
+    // 获取随机的塔罗牌加载提示
+    private fun getRandomTarotLoadingHint(): String {
+        val hints = listOf(
+            "🔮 塔罗牌正在为您占卜...",
+            "🃏 解读牌面能量中...",
+            "✨ 分析牌阵组合...",
+            "🌙 感应宇宙讯息...",
+            "💫 揭示命运真相...",
+            "⭐ 连接塔罗智慧...",
+            "🌟 探索未知领域..."
+        )
+        return hints.random()
+    }
+    
+    // 启动塔罗牌加载动画
+    private fun startTarotLoadingAnimation() {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            // 为整个卡片添加淡入动画
+            val fadeInAnimation = AnimationUtils.loadAnimation(
+                requireContext(), 
+                R.anim.fade_in
+            )
+            binding.cardLoading.startAnimation(fadeInAnimation)
+            
+            // 为进度条外圈添加旋转动画
+            val rotateAnimation = AnimationUtils.loadAnimation(
+                requireContext(),
+                R.anim.rotate_animation
+            )
+            binding.progressBar.parent?.let { parent ->
+                if (parent is View) {
+                    parent.startAnimation(rotateAnimation)
+                }
+            }
+            
+            // 为提示文字添加脉动效果
+            val pulseAnimation = AnimationUtils.loadAnimation(
+                requireContext(),
+                R.anim.pulse_animation
+            )
+            binding.tvLoadingHint.startAnimation(pulseAnimation)
+            
+            // 为三个小圆点添加错开的脉动动画
+            animateTarotLoadingDots()
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "启动加载动画异常", e)
+        }
+    }
+    
+    // 为加载指示点添加错开的动画效果
+    private fun animateTarotLoadingDots() {
+        if (!isActive || !isAdded || _binding == null) return
+        try {
+            val dot1 = binding.root.findViewById<View>(R.id.loadingDot1)
+            val dot2 = binding.root.findViewById<View>(R.id.loadingDot2)
+            val dot3 = binding.root.findViewById<View>(R.id.loadingDot3)
+            
+            // 为每个点创建脉动动画，但添加不同的延迟
+            dot1?.let { animateTarotDot(it, 0) }
+            dot2?.let { animateTarotDot(it, 250) }
+            dot3?.let { animateTarotDot(it, 500) }
+        } catch (e: Exception) {
+            Log.e("TarotAnimation", "添加点动画异常", e)
+        }
+    }
+    
+    // 为单个圆点添加动画
+    private fun animateTarotDot(dot: View, startDelay: Long) {
+        dot.postDelayed({
+            if (isActive && isAdded && _binding != null) {
+                dot.animate()
+                    .scaleX(1.6f)
+                    .scaleY(1.6f)
+                    .alpha(0.2f)
+                    .setDuration(700)
+                    .withEndAction {
+                        if (isActive && isAdded && _binding != null) {
+                            dot.animate()
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .alpha(1f)
+                                .setDuration(700)
+                                .withEndAction {
+                                    // 循环动画
+                                    if (isActive && isAdded && _binding != null && binding.cardLoading.visibility == View.VISIBLE) {
+                                        animateTarotDot(dot, 0)
+                                    }
+                                }
+                                .start()
+                        }
+                    }
+                    .start()
+            }
+        }, startDelay)
     }
     
     // 添加安全的UI更新方法

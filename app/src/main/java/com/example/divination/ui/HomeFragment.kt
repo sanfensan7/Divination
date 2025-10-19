@@ -43,16 +43,12 @@ class HomeFragment : Fragment() {
         }
         
         // 设置推荐算命方式点击事件
-        binding.btnChineseFortune.setOnClickListener {
-            // 跳转到中国传统算命页面
-            (parentFragmentManager.findFragmentById(R.id.fragmentContainer) as? DivinationMethodsFragment)?.selectChineseMethods()
+        binding.cardChineseFortune.setOnClickListener {
             // 切换底部导航到算命页面
             activity?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)?.selectedItemId = R.id.nav_divination
         }
         
-        binding.btnWesternFortune.setOnClickListener {
-            // 跳转到西方传统算命页面
-            (parentFragmentManager.findFragmentById(R.id.fragmentContainer) as? DivinationMethodsFragment)?.selectWesternMethods()
+        binding.cardWesternFortune.setOnClickListener {
             // 切换底部导航到算命页面
             activity?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)?.selectedItemId = R.id.nav_divination
         }

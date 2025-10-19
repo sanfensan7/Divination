@@ -30,24 +30,29 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        setupApiKeyInput()
+        setupUsageStats()
         setupVersionInfo()
         setupFeedbackButton()
         setupPrivacyPolicyButton()
         setupAboutButton()
     }
     
-    private fun setupApiKeyInput() {
-        // 加载已保存的API密钥
-        val apiKey = LocalStorageService.getApiKey(requireContext())
-        binding.etApiKey.setText(apiKey)
+    private fun setupUsageStats() {
+        // 从本地存储获取算命历史记录数量
+        val results = LocalStorageService.getAllResults(requireContext())
+        binding.tvTotalCount.text = results.size.toString()
         
-        // 保存按钮点击事件
-        binding.btnSaveApiKey.setOnClickListener {
-            val newApiKey = binding.etApiKey.text.toString().trim()
-            LocalStorageService.saveApiKey(requireContext(), newApiKey)
-            Toast.makeText(requireContext(), "API密钥已保存", Toast.LENGTH_SHORT).show()
+        // 计算今日使用次数
+        val today = java.util.Calendar.getInstance()
+        today.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        today.set(java.util.Calendar.MINUTE, 0)
+        today.set(java.util.Calendar.SECOND, 0)
+        today.set(java.util.Calendar.MILLISECOND, 0)
+        
+        val todayCount = results.count { result ->
+            result.createTime.time >= today.timeInMillis
         }
+        binding.tvTodayCount.text = todayCount.toString()
     }
     
     private fun setupVersionInfo() {

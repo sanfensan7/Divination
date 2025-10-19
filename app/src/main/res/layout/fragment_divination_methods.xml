@@ -6,20 +6,48 @@
     android:layout_height="match_parent"
     android:background="@color/divination_background"
     tools:context=".ui.DivinationMethodsFragment">
+    
+    <!-- 顶部渐变装饰 -->
+    <View
+        android:id="@+id/topDecoration"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="@drawable/gradient_background"
+        app:layout_constraintTop_toTopOf="parent"/>
+    
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:text="选择算命方式"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@color/divination_card_background"
+        android:layout_height="56dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/button_gradient"
+        android:elevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
         app:tabGravity="fill"
         app:tabMode="fixed"
-        app:tabTextColor="@color/neutral_gray"
-        app:tabSelectedTextColor="@color/divination_primary"
-        app:tabIndicatorColor="@color/divination_primary">
+        app:tabTextColor="@color/white"
+        app:tabSelectedTextColor="@color/gold"
+        app:tabIndicatorColor="@color/gold"
+        app:tabIndicatorHeight="3dp"
+        app:tabTextAppearance="@style/TabTextStyle">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
@@ -42,7 +70,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:padding="8dp"
+        android:padding="16dp"
+        android:paddingTop="24dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
