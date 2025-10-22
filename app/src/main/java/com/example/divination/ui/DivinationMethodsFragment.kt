@@ -17,7 +17,7 @@ class DivinationMethodsFragment : Fragment() {
     private val binding get() = _binding!!
     
     private lateinit var methodAdapter: DivinationMethodAdapter
-    private var currentMethodType = 0 // 0: 全部, 1: 中国传统, 2: 西方传统
+    private var currentMethodType = 0 // 0: 全部, 1: 中国传统, 2: 西方传统, 3: 心理测评
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -60,6 +60,7 @@ class DivinationMethodsFragment : Fragment() {
                     0 -> loadMethods(0) // 全部
                     1 -> loadMethods(1) // 中国传统
                     2 -> loadMethods(2) // 西方传统
+                    3 -> loadMethods(3) // 心理测评
                 }
             }
             
@@ -74,6 +75,7 @@ class DivinationMethodsFragment : Fragment() {
         val methods = when (type) {
             1 -> DivinationMethodProvider.getChineseMethods()
             2 -> DivinationMethodProvider.getWesternMethods()
+            3 -> DivinationMethodProvider.getPsychologicalMethods()
             else -> DivinationMethodProvider.getAllMethods()
         }
         methodAdapter.submitList(methods)

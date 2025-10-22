@@ -37,6 +37,13 @@ object DivinationMethodProvider {
     }
     
     /**
+     * 获取心理测评类方法（如 MBTI）
+     */
+    fun getPsychologicalMethods(): List<DivinationMethod> {
+        return getAllMethods().filter { it.type == 3 }
+    }
+    
+    /**
      * 根据ID获取算命方法
      */
     fun getMethodById(id: String): DivinationMethod? {
