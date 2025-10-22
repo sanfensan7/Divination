@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 基础前缀样式，供 MBTI.* 命名继承链解析使用 -->
+    <style name="MBTI" />
+    <!-- MBTI 页面通用卡片样式 -->
+    <style name="MBTI.SectionCard" parent="ModernCard">
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="cardElevation">6dp</item>
+        <item name="cardCornerRadius">16dp</item>
+    </style>
+
+    <!-- MBTI 小节标题样式 -->
+    <style name="MBTI.SectionTitle" parent="TitleTextStyle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/divination_text</item>
+        <item name="android:layout_marginBottom">12dp</item>
+    </style>
+
+    <!-- MBTI 描述文本样式 -->
+    <style name="MBTI.BodyText">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/divination_text_secondary</item>
+        <item name="android:lineHeight">22dp</item>
+    </style>
+
+    <!-- MBTI 主操作按钮样式 -->
+    <style name="MBTI.PrimaryButton" parent="ModernButton">
+        <item name="backgroundTint">@color/divination_primary</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- MBTI 次要操作按钮样式 -->
+    <style name="MBTI.SecondaryButton" parent="ModernButton">
+        <item name="backgroundTint">@color/success_color</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- MBTI 选项按钮基础样式 -->
+    <style name="MBTI.OptionButton" parent="ModernButton">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="MBTI.OptionButton.StrongAgree" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/success_color</item>
+    </style>
+    <style name="MBTI.OptionButton.Agree" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/wuxing_wood</item>
+    </style>
+    <style name="MBTI.OptionButton.SlightlyAgree" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/divination_primary_light</item>
+    </style>
+    <style name="MBTI.OptionButton.Neutral" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/neutral_gray</item>
+    </style>
+    <style name="MBTI.OptionButton.SlightlyDisagree" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/warning_color</item>
+    </style>
+    <style name="MBTI.OptionButton.Disagree" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/error_color</item>
+    </style>
+    <style name="MBTI.OptionButton.StrongDisagree" parent="MBTI.OptionButton">
+        <item name="backgroundTint">@color/error_color</item>
+    </style>
+</resources>
+
+

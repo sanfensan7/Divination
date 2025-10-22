@@ -38,7 +38,12 @@ class DivinationMethodsFragment : Fragment() {
     private fun setupRecyclerView() {
         methodAdapter = DivinationMethodAdapter { method ->
             // 处理算命方法点击
-            val fragment = DivinationDetailFragment.newInstance(method.id)
+            // MBTI测试特殊处理，直接进入测试界面
+            val fragment = if (method.id == "mbti") {
+                MBTITestFragment.newInstance()
+            } else {
+                DivinationDetailFragment.newInstance(method.id)
+            }
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, fragment)
                 .addToBackStack(null)

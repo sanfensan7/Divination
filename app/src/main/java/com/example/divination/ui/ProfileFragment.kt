@@ -11,9 +11,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.divination.R
 import com.example.divination.databinding.FragmentProfileBinding
 import com.example.divination.model.DivinationResult
+import com.example.divination.model.MBTIResult
 import com.example.divination.ui.adapter.ResultHistoryAdapter
 import com.example.divination.utils.DivinationMethodProvider
 import com.example.divination.utils.LocalStorageService
+import com.example.divination.utils.MBTIStorageService
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -23,6 +25,7 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding ?: throw IllegalStateException("Binding is null, Fragment可能已被销毁")
     
     private lateinit var resultAdapter: ResultHistoryAdapter
+    private lateinit var mbtiStorageService: MBTIStorageService
     private var isActive = true // 跟踪Fragment是否处于活跃状态
 
     override fun onCreateView(
@@ -37,8 +40,10 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        mbtiStorageService = MBTIStorageService.getInstance(requireContext())
         setupRecyclerView()
         loadResults()
+        displayMBTIInfo()
     }
     
     override fun onResume() {
@@ -77,6 +82,23 @@ class ProfileFragment : Fragment() {
         } catch (e: Exception) {
             safeShowEmptyState(true)
             safeShowError("加载结果失败：${e.message}")
+        }
+    }
+    
+    /**
+     * 显示MBTI测试信息
+     */
+    private fun displayMBTIInfo() {
+        try {
+            val latestResult = mbtiStorageService.getLatestResult()
+            val testCount = mbtiStorageService.getResultCount()
+            
+            // 这里可以在UI中显示MBTI相关信息
+            // 例如：最近的人格类型、测试次数等
+            // 如果你的布局中有专门的MBTI信息区域，可以在这里更新
+            
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
     

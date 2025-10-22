@@ -232,5 +232,17 @@ object DivinationMethodProvider {
                 )
             )
         )
+        
+        // MBTI人格测试
+        methods.add(
+            DivinationMethod(
+                id = "mbti",
+                name = "MBTI人格测试",
+                description = "通过60道专业问题分析你的16型人格",
+                iconResId = R.drawable.ic_mbti,
+                type = 3, // 3代表心理测试分类
+                inputFields = emptyList() // MBTI不需要输入字段，直接进入测试
+            )
+        )
     }
 } 
