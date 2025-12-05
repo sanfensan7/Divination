@@ -1,16 +1,17 @@
 package com.example.divination.ui
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
+
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.text.HtmlCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.divination.R
@@ -19,8 +20,10 @@ import com.example.divination.model.ResultSection
 import com.example.divination.databinding.FragmentDivinationResultBinding
 import com.example.divination.utils.DivinationMethodProvider
 import com.example.divination.utils.LocalStorageService
+import com.example.divination.utils.ShareUtils
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.launch
 
 class DivinationResultFragment : Fragment() {
 
@@ -345,16 +348,22 @@ class DivinationResultFragment : Fragment() {
     
     private fun setupShareButton() {
         binding.btnShare.setOnClickListener {
-            // 分享结果
-            val shareText = buildShareText()
-            
-            val shareIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_TEXT, shareText)
-                type = "text/plain"
+            val resultData = result
+            if (resultData == null) {
+                safeShowError("暂无可分享的结果")
+                return@setOnClickListener
             }
-            
-            startActivity(Intent.createChooser(shareIntent, "分享算命结果"))
+            binding.btnShare.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    ShareUtils.shareDivinationResult(requireContext(), resultData)
+                } catch (e: Exception) {
+                    Log.e("DivinationResult", "分享结果失败", e)
+                    safeShowError("分享失败：${e.message}")
+                } finally {
+                    binding.btnShare.isEnabled = true
+                }
+            }
         }
     }
     
@@ -554,6 +563,28 @@ class DivinationResultFragment : Fragment() {
         }
     }
     
+    /**
+     * 初始化视图（目前主要初始化星盘视图）
+     */
+    private fun setupViews() {
+        try {
+            binding.astrologyChartView.apply {
+                // 默认隐藏星盘视图，待有数据时再显示
+                visibility = View.GONE
+                // 设置最小高度和宽度以保证可见性
+                minimumHeight = resources.getDimensionPixelSize(R.dimen.astrology_chart_min_height)
+                minimumWidth = resources.getDimensionPixelSize(R.dimen.astrology_chart_min_width)
+                // 启用点击提示后续功能
+                isClickable = true
+                setOnClickListener {
+                    Toast.makeText(context, "星盘详情功能正在开发中", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DivinationResult", "初始化占星学星盘视图失败", e)
+        }
+    }
+    
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
@@ -563,55 +594,4 @@ class DivinationResultFragment : Fragment() {
         super.onDestroy()
         isActive = false
     }
-    
-    /**
-     * 初始化视图
-     */
-    private fun setupViews() {
-        // 无需设置返回按钮，因为布局中没有该按钮
-        
-        // 设置分享按钮
-        binding.btnShare?.setOnClickListener {
-            shareResult()
-        }
-        
-        // 初始化占星学星盘视图
-        try {
-            binding.astrologyChartView.apply {
-                // 默认隐藏星盘视图
-                visibility = View.GONE
-                
-                // 设置最小高度和宽度
-                minimumHeight = resources.getDimensionPixelSize(R.dimen.astrology_chart_min_height)
-                minimumWidth = resources.getDimensionPixelSize(R.dimen.astrology_chart_min_width)
-                
-                // 设置可点击
-                isClickable = true
-                
-                // 添加点击事件
-                setOnClickListener {
-                    // 点击时放大显示星盘（扩展功能，未实现）
-                    Toast.makeText(context, "星盘详情功能正在开发中", Toast.LENGTH_SHORT).show()
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("DivinationResult", "初始化占星学星盘视图失败", e)
-        }
-    }
-
-    /**
-     * 分享结果
-     */
-    private fun shareResult() {
-        // 分享结果
-        val shareText = buildShareText()
-        
-        val shareIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            type = "text/plain"
-        }
-        
-        startActivity(Intent.createChooser(shareIntent, "分享算命结果"))
-    }
-} 
+}

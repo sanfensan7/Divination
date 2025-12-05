@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Share
@@ -24,7 +25,9 @@ import com.example.divination.ui.component.*
 import com.example.divination.ui.theme.IOSColor
 import com.example.divination.ui.theme.IOSSpacing
 import com.example.divination.ui.theme.IOSTypography
+import com.example.divination.utils.ShareUtils
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -55,6 +58,8 @@ fun DivinationResultScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     
     // 动画状态
     var showContent by remember { mutableStateOf(false) }
@@ -72,10 +77,18 @@ fun DivinationResultScreen(
             title = "算命结果",
             scrollState = scrollState,
             actions = {
-                // 分享按钮
-                androidx.compose.material.IconButton(
+                IconButton(
+                    enabled = uiState.result != null,
                     onClick = {
-                        // TODO: 实现分享功能
+                        uiState.result?.let { result ->
+                            coroutineScope.launch {
+                                try {
+                                    ShareUtils.shareDivinationResult(context, result)
+                                } catch (e: Exception) {
+                                    // TODO: 可用 Snackbar/Toast 提示
+                                }
+                            }
+                        }
                     }
                 ) {
                     Icon(

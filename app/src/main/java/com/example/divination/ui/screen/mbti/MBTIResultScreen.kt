@@ -20,6 +20,8 @@ import com.example.divination.ui.theme.IOSColor
 import com.example.divination.ui.theme.IOSSpacing
 import com.example.divination.ui.theme.IOSTypography
 import com.example.divination.utils.MBTIStorageService
+import com.example.divination.utils.ShareUtils
+import kotlinx.coroutines.launch
 
 /**
  * MBTI 结果页面
@@ -42,6 +44,8 @@ fun MBTIResultScreen(
     val scrollState = rememberLazyListState()
     val context = LocalContext.current
     val storageService = remember { MBTIStorageService.getInstance(context) }
+    val coroutineScope = rememberCoroutineScope()
+    var isSharing by remember { mutableStateOf(false) }
 
     val result: MBTIResult? = remember {
         if (resultId.isNotEmpty()) {
@@ -64,8 +68,21 @@ fun MBTIResultScreen(
             actions = {
                 // 分享按钮
                 androidx.compose.material.IconButton(
+                    enabled = result != null && !isSharing,
                     onClick = {
-                        // TODO: 实现分享功能
+                        val data = result
+                        if (data != null) {
+                            coroutineScope.launch {
+                                try {
+                                    isSharing = true
+                                    ShareUtils.shareMBTIResult(context, data)
+                                } catch (e: Exception) {
+                                    // TODO: Snackbar/Toast 提示
+                                } finally {
+                                    isSharing = false
+                                }
+                            }
+                        }
                     }
                 ) {
                     Icon(
