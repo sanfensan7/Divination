@@ -13,6 +13,8 @@ import java.io.DataOutputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.InetAddress
+import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.util.*
 import javax.net.ssl.HttpsURLConnection
@@ -35,11 +37,39 @@ object DeepSeekService {
     }
     
     // 内置的 DeepSeek API 密钥
-    private const val DEEPSEEK_API_KEY = "sk-89f7a9dbb66f4a8e8682116c1b116257"
+    private const val DEEPSEEK_API_KEY = "sk-3778cb5224464e02b4f56d8620213072"
     
     // 获取API密钥
     private fun getApiKey(context: Context): String {
+        Log.d(TAG, "使用API密钥: ${DEEPSEEK_API_KEY.take(10)}...${DEEPSEEK_API_KEY.takeLast(4)}")
         return DEEPSEEK_API_KEY
+    }
+    
+    /**
+     * 测试API连接
+     */
+    fun testApiConnection(context: Context, callback: (Boolean, String) -> Unit) {
+        thread {
+            try {
+                val apiKey = getApiKey(context)
+                val testPrompt = "你好，请回复'测试成功'"
+                
+                Log.d(TAG, "开始测试API连接...")
+                val response = sendRequest(context, apiKey, testPrompt, "test")
+                
+                val success = response.isNotEmpty() && !response.contains("error")
+                val message = if (success) "API连接成功！" else "API返回异常：$response"
+                
+                android.os.Handler(context.mainLooper).post {
+                    callback(success, message)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "API连接测试失败", e)
+                android.os.Handler(context.mainLooper).post {
+                    callback(false, "连接失败：${e.message}")
+                }
+            }
+        }
     }
     
     /**
@@ -109,6 +139,17 @@ object DeepSeekService {
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "API调用失败: ${e.javaClass.simpleName}: ${e.message}", e)
+                    Log.e(TAG, "详细错误信息: ${e.stackTraceToString()}")
+                    
+                    // 诊断网络连接
+                    val networkInfo = try {
+                        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+                        val activeNetwork = connectivityManager.activeNetworkInfo
+                        "网络状态: ${if (activeNetwork?.isConnected == true) "已连接" else "未连接"}, 类型: ${activeNetwork?.typeName}"
+                    } catch (ex: Exception) {
+                        "无法获取网络状态: ${ex.message}"
+                    }
+                    Log.e(TAG, networkInfo)
                     
                     // 使用模拟响应作为备选
                     showToast(context, "AI服务调用失败：${e.message?.take(50)}...，使用本地模拟模式")
@@ -170,7 +211,13 @@ object DeepSeekService {
         - 分析特点：结合传统理论与现代心理学，既尊重传统又符合现代人思维
         
         ## 用户输入信息
-        ${inputData.entries.joinToString("\n") { "- ${it.key}: ${it.value}" }}
+        ${inputData.entries.joinToString("\n") { entry ->
+            if (entry.key.contains("Image") && entry.value.length > 100) {
+                "- ${entry.key}: [已上传照片，Base64编码长度: ${entry.value.length}字符]"
+            } else {
+                "- ${entry.key}: ${entry.value}"
+            }
+        }}
         
         ## 输出要求
         1. 内容分为至少4-5个独立章节，每章节有明确标题和详细解读
@@ -296,33 +343,39 @@ object DeepSeekService {
             """
             
             "face" -> """
-                - 基于传统面相学五官与命运关系的分析
-                - 详细解读额头（天庭）、眉毛、眼睛、鼻子、嘴巴、下巴（地阁）等特征
-                - 分析面部气色、痣点、纹理对运势的影响
-                - 根据三停五岳理论评估面相整体平衡
-                - 解释耳朵、眉毛等细节特征的命理含义
-                - 分析面相中的财富线、婚姻线、事业线等特征
-                - 结合传统相学与现代面部特征研究
-                - 提供面相改善的建议（如提升气色、注意健康等）
+                - 用户已上传面部照片（Base64编码），请基于照片进行专业分析
+                - 仔细观察照片中的五官特征：额头（天庭）、眉毛、眼睛、鼻子、嘴巴、下巴（地阁）
+                - 分析面部比例、三停（上停、中停、下停）的平衡关系
+                - 根据五岳（额、颧、鼻、颏、耳）理论评估面相整体格局
+                - 观察面部气色、肤色、光泽度对运势的影响
+                - 分析眉眼间距、鼻梁高低、嘴唇厚薄等细节特征
+                - 识别面部痣点、纹理、疤痕的位置及其命理含义
+                - 评估五官协调性和整体面相的吉凶格局
+                - 结合传统相学理论与现代面部特征研究
                 - 指出五官中的不协调特征及其反映的性格弱点
                 - 解读面相中的"破绽"和"缺陷"对运势的影响
                 - 分析面部特征中预示的健康隐患和注意事项
                 - 提供如何通过表情、气色调整来改善面相能量的建议
+                - 注意：即使照片不够清晰，也要基于可见特征进行专业分析
             """
             
-            "palm" -> """
-                - 详细分析手掌的生命线、智慧线、感情线、命运线等主要线纹
-                - 解读手型（水型、火型、土型、风型）对性格的影响
-                - 评估指纹类型及指节特征
-                - 分析大拇指、金星丘、月丘等丘陵的特点
-                - 解释掌纹交叉、断裂、分叉等特殊纹路的含义
-                - 结合两手掌纹的差异（先天与后天的对比）
-                - 详细说明特殊标记（岛、星、格等）的命理意义
-                - 提供如何强化有利掌纹能量的建议
+            "palmistry" -> """
+                - 用户已上传手掌照片（Base64编码），请基于照片进行专业分析
+                - 仔细观察照片中的三大主线：生命线、智慧线（头脑线）、感情线（心线）
+                - 分析手型特征：手掌形状、手指长度、指节粗细
+                - 判断手型类别（水型、火型、土型、风型）及其对性格的影响
+                - 观察掌纹的清晰度、深浅、长短、走向
+                - 识别命运线、太阳线、婚姻线等辅助线纹
+                - 分析金星丘、月丘、木星丘等丘陵的饱满程度
+                - 观察掌纹中的特殊标记：岛纹、星纹、十字纹、三角纹等
+                - 评估掌纹的断裂、分叉、交叉等特殊形态
+                - 分析手掌颜色、肤质、弹性对健康运势的影响
+                - 观察大拇指的形态和指节特征
                 - 直接指出掌纹中的断裂、岛纹、交叉等不利特征的具体影响
                 - 解读掌纹中预示的健康、情感或事业挑战
                 - 分析手掌整体能量中的弱点和不平衡之处
                 - 提供如何通过行为和习惯改变来弥补掌纹缺陷的方法
+                - 注意：即使照片不够清晰，也要基于可见纹路进行专业分析
             """
             
             "fengshui" -> """
@@ -410,12 +463,21 @@ object DeepSeekService {
         
         try {
             Log.d(TAG, "开始API请求，methodId: $methodId, URL: $API_URL")
+            Log.d(TAG, "API密钥前缀: ${apiKey.take(10)}...")
             
             // 设置连接属性
             connection.requestMethod = "POST"
-            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.setRequestProperty("Authorization", "Bearer $apiKey")
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("User-Agent", "Divination-Android-App/1.0")
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("User-Agent", "Divination-Android-App/1.0")
+            connection.setRequestProperty("Connection", "close")  // 避免连接复用问题
             connection.doOutput = true
+            connection.doInput = true
+            connection.useCaches = false
+            connection.instanceFollowRedirects = true
             
             // 根据不同的占卜方法设置不同的超时时间
             val connectTimeout = when (methodId) {
@@ -1869,90 +1931,93 @@ object DeepSeekService {
      */
     fun parseResponseToSections(content: String): List<ResultSection> {
         val sections = mutableListOf<ResultSection>()
-        
+
         try {
-            // 检查内容是否为空
+            // 空内容直接返回占位结果
             if (content.isBlank()) {
                 sections.add(ResultSection("结果", "无法获取有效内容"))
                 return sections
             }
-            
-            // 尝试根据标题格式分段
-            val titlePattern = "【([^】]+)】|\\[([^\\]]+)\\]|^(.*?)[：:]".toRegex(RegexOption.MULTILINE)
-            val titleMatches = titlePattern.findAll(content)
-            
-            // 如果找到标题格式的分隔符
-            if (titleMatches.count() > 0) {
-                var currentTitle = "概述"
-                var currentContent = StringBuilder()
-                var lastIndex = 0
-                
-                for (match in titleMatches) {
-                    // 如果不是第一个标题，保存上一部分内容
-                    if (match.range.first > lastIndex && currentContent.isNotEmpty()) {
-                        sections.add(ResultSection(currentTitle, currentContent.toString().trim()))
-                        currentContent = StringBuilder()
+
+            // 先按标准的【标题】格式解析，符合 DeepSeekServiceTest 中的用例
+            val titleRegex = "【([^】]+)】".toRegex()
+            val matches = titleRegex.findAll(content).toList()
+
+            if (matches.isNotEmpty()) {
+                var cursor = 0
+
+                // 处理第一个标题之前的内容，作为“总论”
+                val firstMatch = matches.first()
+                if (firstMatch.range.first > 0) {
+                    val intro = content.substring(0, firstMatch.range.first).trim()
+                    if (intro.isNotEmpty()) {
+                        sections.add(ResultSection("总论", intro))
                     }
-                    
-                    // 提取新标题
-                    currentTitle = match.groupValues[1].ifEmpty { 
-                        match.groupValues[2].ifEmpty { match.groupValues[3] }
-                    }
-                    
-                    // 提取此标题下的内容
-                    val titleEnd = match.range.last + 1
-                    val nextMatchStart = titleMatches.find { it.range.first > titleEnd }?.range?.first ?: content.length
-                    
-                    if (nextMatchStart > titleEnd) {
-                        currentContent.append(content.substring(titleEnd, nextMatchStart))
-                    }
-                    
-                    lastIndex = nextMatchStart
                 }
-                
-                // 添加最后一部分
-                if (currentContent.isNotEmpty()) {
-                    sections.add(ResultSection(currentTitle, currentContent.toString().trim()))
+
+                // 逐个标题切分出内容
+                matches.forEachIndexed { index, match ->
+                    val title = match.groupValues[1].trim().ifEmpty { "无标题" }
+                    val start = match.range.last + 1
+                    val end = if (index < matches.lastIndex) {
+                        matches[index + 1].range.first
+                    } else {
+                        content.length
+                    }
+
+                    if (end > start) {
+                        val body = content.substring(start, end).trim()
+                        // 与测试保持一致：跳过内容为空的部分
+                        if (body.isNotEmpty()) {
+                            sections.add(ResultSection(title, body))
+                        }
+                    }
+
+                    cursor = end
                 }
-            } else {
-                // 没有找到标准格式的标题，尝试智能分段
+            }
+
+            // 如果没有匹配到标准标题，或者解析后仍然为空，则退回到简单分段逻辑
+            if (sections.isEmpty()) {
                 val lines = content.split("\n").filter { it.trim().isNotEmpty() }
-                
-                // 如果内容很短，直接添加为一个部分
+
                 if (lines.size <= 5) {
                     sections.add(ResultSection("结果", content.trim()))
                 } else {
-                    // 根据内容长度，尝试将其分为2-3个部分
                     val partCount = if (lines.size > 15) 3 else 2
                     val partSize = lines.size / partCount
-                    
+
                     for (i in 0 until partCount) {
                         val start = i * partSize
                         val end = if (i == partCount - 1) lines.size else (i + 1) * partSize
-                        
-                        // 尝试为每个部分找一个合适的标题
+
                         val partTitle = when (i) {
                             0 -> "综合分析"
                             partCount - 1 -> "建议"
                             else -> "详细解读"
                         }
-                        
-                        val partContent = lines.subList(start, end).joinToString("\n")
-                        sections.add(ResultSection(partTitle, partContent))
+
+                        val body = lines.subList(start, end).joinToString("\n").trim()
+                        if (body.isNotEmpty()) {
+                            sections.add(ResultSection(partTitle, body))
+                        }
                     }
                 }
             }
-            
-            // 检查是否生成了有效的部分
+
             if (sections.isEmpty()) {
                 sections.add(ResultSection("结果", content.trim()))
             }
-            
+
             return sections
         } catch (e: Exception) {
-            // 出现任何异常，记录错误并返回简单的结果
             Log.e(TAG, "解析响应文本出错", e)
-            sections.add(ResultSection("结果", "解析内容时出现错误，原始内容如下：\n\n${content.take(1000)}"))
+            sections.add(
+                ResultSection(
+                    "结果",
+                    "解析内容时出现错误，原始内容如下：\n\n${content.take(1000)}"
+                )
+            )
             return sections
         }
     }

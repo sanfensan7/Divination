@@ -1,14 +1,25 @@
 package com.example.divination.ui
 
+import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.example.divination.R
@@ -18,8 +29,11 @@ import com.example.divination.model.InputField
 import com.example.divination.ui.CustomDatePickerDialog
 import com.example.divination.utils.DeepSeekService
 import com.example.divination.utils.DivinationMethodProvider
+import com.example.divination.utils.ImageUtils
 import com.example.divination.utils.LocalStorageService
 import com.example.divination.utils.safePerformDivination
+import com.google.android.material.button.MaterialButton
+import java.io.File
 import java.util.*
 
 class DivinationDetailFragment : Fragment() {
@@ -30,6 +44,41 @@ class DivinationDetailFragment : Fragment() {
     private lateinit var methodId: String
     private var method: DivinationMethod? = null
     private var isActive = true // 跟踪Fragment是否处于活跃状态
+    
+    // 图片相关
+    private var currentPhotoPath: String? = null
+    private var currentImageUri: Uri? = null
+    private var currentImageBitmap: Bitmap? = null
+    private var currentImageFieldId: String? = null
+    private val imageDataMap = mutableMapOf<String, String>() // fieldId -> base64Image
+    
+    // 拍照结果处理
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && currentImageUri != null) {
+            handleImageResult(currentImageUri!!)
+        }
+    }
+    
+    // 选择照片结果处理
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { handleImageResult(it) }
+    }
+    
+    // 权限请求结果处理
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            Toast.makeText(requireContext(), "权限已授予", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(requireContext(), "需要相机和存储权限才能使用此功能", Toast.LENGTH_LONG).show()
+        }
+    }
     
     companion object {
         private const val ARG_METHOD_ID = "method_id"
@@ -83,64 +132,114 @@ class DivinationDetailFragment : Fragment() {
         binding.inputFieldsContainer.removeAllViews()
         
         method?.inputFields?.forEach { field ->
-            val fieldView = LayoutInflater.from(requireContext())
-                .inflate(R.layout.item_input_field, binding.inputFieldsContainer, false)
-            
-            val labelView = fieldView.findViewById<android.widget.TextView>(R.id.tvFieldLabel)
-            val valueView = fieldView.findViewById<android.widget.EditText>(R.id.etFieldValue)
-            val spinnerLayout = fieldView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.spinnerLayout)
-            val textInputLayout = fieldView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.textInputLayout)
-            val spinnerView = fieldView.findViewById<AutoCompleteTextView>(R.id.spinnerFieldValue)
-            
-            labelView.text = field.name
-            
-            // 设置字段ID作为tag
-            fieldView.tag = field.id
-            
             when (field.type) {
-                1 -> { // 文本
-                    textInputLayout.isVisible = true
-                    spinnerLayout.isVisible = false
-                    valueView.setHint("请输入")
+                5 -> { // 图片类型
+                    setupImageField(field)
                 }
-                2 -> { // 日期
-                    textInputLayout.isVisible = true
-                    spinnerLayout.isVisible = false
-                    valueView.setHint("选择日期")
-                    valueView.isFocusableInTouchMode = false
-                    valueView.isFocusable = false
-                    valueView.isClickable = true
-                    valueView.setOnClickListener {
-                        showDatePicker(valueView)
-                    }
-                }
-                3 -> { // 时间
-                    textInputLayout.isVisible = true
-                    spinnerLayout.isVisible = false
-                    valueView.setHint("选择时间")
-                    valueView.isFocusableInTouchMode = false
-                    valueView.isFocusable = false
-                    valueView.isClickable = true
-                    valueView.setOnClickListener {
-                        showTimePicker(valueView)
-                    }
-                }
-                4 -> { // 选择
-                    textInputLayout.isVisible = false
-                    spinnerLayout.isVisible = true
-                    
-                    val adapter = ArrayAdapter(
-                        requireContext(),
-                        R.layout.item_dropdown_menu,
-                        field.options
-                    )
-                    spinnerView.setAdapter(adapter)
-                    spinnerView.setHint("请选择")
+                else -> { // 其他类型
+                    setupRegularField(field)
                 }
             }
-            
-            binding.inputFieldsContainer.addView(fieldView)
         }
+    }
+    
+    private fun setupRegularField(field: InputField) {
+        val fieldView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.item_input_field, binding.inputFieldsContainer, false)
+        
+        val labelView = fieldView.findViewById<android.widget.TextView>(R.id.tvFieldLabel)
+        val valueView = fieldView.findViewById<android.widget.EditText>(R.id.etFieldValue)
+        val spinnerLayout = fieldView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.spinnerLayout)
+        val textInputLayout = fieldView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.textInputLayout)
+        val spinnerView = fieldView.findViewById<AutoCompleteTextView>(R.id.spinnerFieldValue)
+        
+        labelView.text = field.name
+        fieldView.tag = field.id
+        
+        when (field.type) {
+            1 -> { // 文本
+                textInputLayout.isVisible = true
+                spinnerLayout.isVisible = false
+                valueView.setHint(if (field.hint.isNotEmpty()) field.hint else "请输入")
+            }
+            2 -> { // 日期
+                textInputLayout.isVisible = true
+                spinnerLayout.isVisible = false
+                valueView.setHint(if (field.hint.isNotEmpty()) field.hint else "选择日期")
+                valueView.isFocusableInTouchMode = false
+                valueView.isFocusable = false
+                valueView.isClickable = true
+                valueView.setOnClickListener {
+                    showDatePicker(valueView)
+                }
+            }
+            3 -> { // 时间
+                textInputLayout.isVisible = true
+                spinnerLayout.isVisible = false
+                valueView.setHint(if (field.hint.isNotEmpty()) field.hint else "选择时间")
+                valueView.isFocusableInTouchMode = false
+                valueView.isFocusable = false
+                valueView.isClickable = true
+                valueView.setOnClickListener {
+                    showTimePicker(valueView)
+                }
+            }
+            4 -> { // 选择
+                textInputLayout.isVisible = false
+                spinnerLayout.isVisible = true
+                
+                val adapter = ArrayAdapter(
+                    requireContext(),
+                    R.layout.item_dropdown_menu,
+                    field.options
+                )
+                spinnerView.setAdapter(adapter)
+                spinnerView.setHint(if (field.hint.isNotEmpty()) field.hint else "请选择")
+            }
+        }
+        
+        binding.inputFieldsContainer.addView(fieldView)
+    }
+    
+    private fun setupImageField(field: InputField) {
+        val fieldView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.item_input_field_image, binding.inputFieldsContainer, false)
+        
+        fieldView.tag = field.id
+        
+        val tvFieldLabel = fieldView.findViewById<android.widget.TextView>(R.id.tvFieldLabel)
+        val tvImageHint = fieldView.findViewById<android.widget.TextView>(R.id.tvImageHint)
+        val ivImagePreview = fieldView.findViewById<ImageView>(R.id.ivImagePreview)
+        val ivPlaceholder = fieldView.findViewById<ImageView>(R.id.ivPlaceholder)
+        val btnTakePhoto = fieldView.findViewById<MaterialButton>(R.id.btnTakePhoto)
+        val btnSelectPhoto = fieldView.findViewById<MaterialButton>(R.id.btnSelectPhoto)
+        val btnRemovePhoto = fieldView.findViewById<MaterialButton>(R.id.btnRemovePhoto)
+        
+        tvFieldLabel.text = field.name
+        tvImageHint.text = field.hint.ifEmpty { "请拍摄或选择照片" }
+        
+        // 拍照按钮
+        btnTakePhoto.setOnClickListener {
+            currentImageFieldId = field.id
+            checkPermissionsAndTakePhoto()
+        }
+        
+        // 选择照片按钮
+        btnSelectPhoto.setOnClickListener {
+            currentImageFieldId = field.id
+            checkPermissionsAndPickImage()
+        }
+        
+        // 删除照片按钮
+        btnRemovePhoto.setOnClickListener {
+            imageDataMap.remove(field.id)
+            ivImagePreview.setImageBitmap(null)
+            ivImagePreview.isVisible = false
+            ivPlaceholder.isVisible = true
+            btnRemovePhoto.isVisible = false
+        }
+        
+        binding.inputFieldsContainer.addView(fieldView)
     }
     
     private fun setupSubmitButton() {
@@ -237,6 +336,12 @@ class DivinationDetailFragment : Fragment() {
                 }
                 4 -> {
                     data[fieldId] = spinnerView.text.toString()
+                }
+                5 -> { // 图片类型
+                    // 从imageDataMap获取base64图片数据
+                    imageDataMap[fieldId]?.let { base64Image ->
+                        data[fieldId] = base64Image
+                    }
                 }
             }
         }
@@ -355,6 +460,20 @@ class DivinationDetailFragment : Fragment() {
                 "✨ 分析梦境象征...",
                 "🌙 解读心灵密语...",
                 "💫 揭示梦境真意..."
+            )
+            "palmistry" -> listOf(
+                "🔮 正在观察掌纹...",
+                "✋ 分析三大主线...",
+                "✨ 解读手型特征...",
+                "💫 推演掌中命运...",
+                "🎯 揭示手相奥秘..."
+            )
+            "face" -> listOf(
+                "🔮 正在观察面相...",
+                "👤 分析五官特征...",
+                "✨ 解读三停五岳...",
+                "💫 推演面部气色...",
+                "🎯 揭示相学玄机..."
             )
             "numerology" -> listOf(
                 "🔮 正在计算生命数字...",
@@ -487,8 +606,143 @@ class DivinationDetailFragment : Fragment() {
         safeShowError(message)
     }
     
+    // ========== 图片处理相关方法 ==========
+    
+    /**
+     * 检查权限并拍照
+     */
+    private fun checkPermissionsAndTakePhoto() {
+        val permissions = mutableListOf<String>()
+        
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.CAMERA)
+        }
+        
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+        
+        if (permissions.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissions.toTypedArray())
+        } else {
+            takePhoto()
+        }
+    }
+    
+    /**
+     * 检查权限并选择照片
+     */
+    private fun checkPermissionsAndPickImage() {
+        val permissions = mutableListOf<String>()
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_IMAGES)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
+        
+        if (permissions.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissions.toTypedArray())
+        } else {
+            pickImage()
+        }
+    }
+    
+    /**
+     * 拍照
+     */
+    private fun takePhoto() {
+        try {
+            val photoFile = ImageUtils.createTempImageFile(requireContext())
+            currentPhotoPath = photoFile.absolutePath
+            
+            currentImageUri = FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.fileprovider",
+                photoFile
+            )
+            
+            takePictureLauncher.launch(currentImageUri)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(requireContext(), "无法打开相机：${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * 选择照片
+     */
+    private fun pickImage() {
+        pickImageLauncher.launch("image/*")
+    }
+    
+    /**
+     * 处理图片结果
+     */
+    private fun handleImageResult(uri: Uri) {
+        try {
+            // 压缩图片
+            val bitmap = ImageUtils.compressImage(requireContext(), uri, 1024, 1024)
+            
+            if (bitmap != null) {
+                currentImageBitmap = bitmap
+                
+                // 转换为Base64
+                val base64Image = ImageUtils.bitmapToBase64(bitmap, 85)
+                currentImageFieldId?.let { fieldId ->
+                    imageDataMap[fieldId] = base64Image
+                }
+                
+                // 更新UI
+                updateImagePreview(bitmap)
+                
+                Toast.makeText(requireContext(), "照片已添加", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "无法加载图片", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(requireContext(), "处理图片失败：${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * 更新图片预览
+     */
+    private fun updateImagePreview(bitmap: Bitmap) {
+        currentImageFieldId?.let { fieldId ->
+            // 找到对应的图片字段视图
+            for (i in 0 until binding.inputFieldsContainer.childCount) {
+                val fieldView = binding.inputFieldsContainer.getChildAt(i)
+                if (fieldView.tag == fieldId) {
+                    val ivImagePreview = fieldView.findViewById<ImageView>(R.id.ivImagePreview)
+                    val ivPlaceholder = fieldView.findViewById<ImageView>(R.id.ivPlaceholder)
+                    val btnRemovePhoto = fieldView.findViewById<MaterialButton>(R.id.btnRemovePhoto)
+                    
+                    ivImagePreview?.setImageBitmap(bitmap)
+                    ivImagePreview?.isVisible = true
+                    ivPlaceholder?.isVisible = false
+                    btnRemovePhoto?.isVisible = true
+                    break
+                }
+            }
+        }
+    }
+    
     override fun onDestroyView() {
         super.onDestroyView()
+        currentImageBitmap?.recycle()
+        currentImageBitmap = null
         _binding = null
     }
     

@@ -1,0 +1,49 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- 脸部轮廓 -->
+    <path
+        android:fillColor="#9C27B0"
+        android:pathData="M12,2C8,2 5,5 4,8C3,11 3,14 4,17C5,19 7,21 9,21.5C10,21.8 11,22 12,22C13,22 14,21.8 15,21.5C17,21 19,19 20,17C21,14 21,11 20,8C19,5 16,2 12,2Z"/>
+    
+    <!-- 左眼 -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M8.5,9.5m-1,0a1,1 0,1,1 2,0a1,1 0,1,1 -2,0"/>
+    
+    <!-- 右眼 -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M15.5,9.5m-1,0a1,1 0,1,1 2,0a1,1 0,1,1 -2,0"/>
+    
+    <!-- 鼻子 -->
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="1"
+        android:strokeLineCap="round"
+        android:pathData="M12,10L12,14"/>
+    
+    <!-- 嘴巴 -->
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="1"
+        android:strokeLineCap="round"
+        android:pathData="M9,16C10,17 11,17.5 12,17.5C13,17.5 14,17 15,16"/>
+    
+    <!-- 左眉毛 -->
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:pathData="M7,7.5L10,7"/>
+    
+    <!-- 右眉毛 -->
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:pathData="M14,7L17,7.5"/>
+</vector>

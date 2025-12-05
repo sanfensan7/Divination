@@ -5,6 +5,8 @@ import android.util.Log
 import com.example.divination.model.DivinationMethod
 import com.example.divination.model.DivinationResult
 import com.example.divination.model.ResultSection
+import com.example.divination.utils.MoodStorageService
+
 import java.util.*
 import java.text.SimpleDateFormat
 
@@ -49,11 +51,24 @@ fun safePerformDivination(
         // 使用动态超时时间
         timeoutHandler.postDelayed(timeoutRunnable, timeoutDuration)
         
+        // 在提示词中加入最近的情绪画像（如果有）
+        val enrichedInput = run {
+            val summary = MoodStorageService.getSummary(context)
+            if (summary != null) {
+                inputData + mapOf(
+                    "最近情绪画像" to summary.personaTitle,
+                    "情绪预警" to summary.warningTitle
+                )
+            } else {
+                inputData
+            }
+        }
+
         // 调用DeepSeekService.performDivination方法
         DeepSeekService.performDivination(
             context = context,
             method = method,
-            inputData = inputData
+            inputData = enrichedInput
         ) { result, error ->
             try {
                 // 取消超时处理

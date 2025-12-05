@@ -4,6 +4,11 @@
         android:id="@+id/nav_home"
         android:icon="@drawable/ic_home"
         android:title="首页" />
+
+    <item
+        android:id="@+id/nav_mood"
+        android:icon="@drawable/ic_mood"
+        android:title="心情" />
     
     <item
         android:id="@+id/nav_divination"

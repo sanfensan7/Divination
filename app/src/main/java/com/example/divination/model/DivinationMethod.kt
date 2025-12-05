@@ -24,14 +24,16 @@ data class DivinationMethod(
  *
  * @property id 字段ID
  * @property name 字段名称
- * @property type 字段类型（1-文本，2-日期，3-时间，4-选择）
+ * @property type 字段类型（1-文本，2-日期，3-时间，4-选择，5-图片）
  * @property required 是否必填
  * @property options 选择类型的选项
+ * @property hint 输入提示文本
  */
 data class InputField(
     val id: String,
     val name: String,
-    val type: Int, // 1: 文本, 2: 日期, 3: 时间, 4: 选择
+    val type: Int, // 1: 文本, 2: 日期, 3: 时间, 4: 选择, 5: 图片
     val required: Boolean = true,
-    val options: List<String> = listOf()
+    val options: List<String> = listOf(),
+    val hint: String = ""
 ) 

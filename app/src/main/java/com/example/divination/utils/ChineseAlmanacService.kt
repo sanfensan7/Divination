@@ -32,6 +32,34 @@ object ChineseAlmanacService {
         "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
     )
     
+    /**
+     * 1900-2099 年农历数据
+     * 每个条目包含闰月信息以及每个月是大月（30天）还是小月（29天）
+     */
+    private val LUNAR_INFO = longArrayOf(
+        0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
+        0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
+        0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
+        0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
+        0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557,
+        0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5d0, 0x14573, 0x052d0, 0x0a9a8, 0x0e950, 0x06aa0,
+        0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
+        0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b5a0, 0x195a6,
+        0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570,
+        0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x05ac0, 0x0ab60, 0x096d5, 0x092e0,
+        0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
+        0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930,
+        0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
+        0x05aa0, 0x076a3, 0x096d0, 0x04bd7, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
+        0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0,
+        0x14b63
+    )
+    
+    private val BASE_CALENDAR = Calendar.getInstance().apply {
+        set(1900, Calendar.JANUARY, 31, 0, 0, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    
     // 扩展的宜忌活动列表
     private val GOOD_ACTIVITIES = arrayOf(
         "祭祀", "祈福", "求嗣", "开光", "嫁娶", "会亲友", "开市", "交易", "入学", "习艺",
@@ -120,7 +148,7 @@ object ChineseAlmanacService {
         // 计算冲煞
         val chongSha = calculateChongSha(dateHash, zodiacIndex)
         
-        // 计算值神星宿
+        // 计算值年星宿
         val yearStar = calculateYearStar(year, month)
         val dayStar = STARS[(dateHash % STARS.size)]
         
@@ -158,15 +186,90 @@ object ChineseAlmanacService {
      * 全新实现：计算农历日期
      */
     private fun calculateLunarDateNew(calendar: Calendar): String {
-        // 注意：这是简化实现，实际应该采用专业农历算法
-        val year = calendar.get(Calendar.YEAR)
-        val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+        val normalizedCalendar = calendar.clone() as Calendar
+        normalizedCalendar.set(Calendar.HOUR_OF_DAY, 0)
+        normalizedCalendar.set(Calendar.MINUTE, 0)
+        normalizedCalendar.set(Calendar.SECOND, 0)
+        normalizedCalendar.set(Calendar.MILLISECOND, 0)
         
-        // 用年份和年中的天数做简单映射
-        val lunarMonthIndex = ((dayOfYear * 12) / 365 + (year % 5)) % 12
-        val lunarDayIndex = ((dayOfYear * 30) / 365 + (year % 3)) % 30
+        var offset = ((normalizedCalendar.timeInMillis - BASE_CALENDAR.timeInMillis) / 86400000L).toInt()
+        if (offset < 0) offset = 0
         
-        return "${LUNAR_MONTHS[lunarMonthIndex]}${LUNAR_DAYS[lunarDayIndex]}"
+        var lunarYear = 1900
+        var daysInYear = yearDays(lunarYear)
+        while (offset >= daysInYear && lunarYear < 2100) {
+            offset -= daysInYear
+            lunarYear++
+            daysInYear = yearDays(lunarYear)
+        }
+        
+        val leapMonth = leapMonth(lunarYear)
+        var isLeapMonth = false
+        var lunarMonth = 1
+        var daysInMonth: Int
+        
+        while (true) {
+            daysInMonth = if (isLeapMonth) {
+                leapDays(lunarYear)
+            } else {
+                monthDays(lunarYear, lunarMonth)
+            }
+            
+            if (offset < daysInMonth) {
+                break
+            }
+            
+            offset -= daysInMonth
+            
+            if (leapMonth > 0 && lunarMonth == leapMonth && !isLeapMonth) {
+                isLeapMonth = true
+            } else {
+                if (isLeapMonth && lunarMonth == leapMonth) {
+                    isLeapMonth = false
+                }
+                lunarMonth++
+            }
+        }
+        
+        val lunarDay = offset + 1
+        val monthName = buildString {
+            if (isLeapMonth && leapMonth != 0) {
+                append("闰")
+            }
+            append(LUNAR_MONTHS[(lunarMonth - 1).coerceIn(LUNAR_MONTHS.indices)])
+        }
+        val dayName = LUNAR_DAYS[(lunarDay - 1).coerceIn(LUNAR_DAYS.indices)]
+        
+        return "$monthName$dayName"
+    }
+    
+    private fun yearDays(year: Int): Int {
+        var sum = 348
+        var info = LUNAR_INFO.getOrNull(year - 1900)?.toInt() ?: return 0
+        var mask = 0x8000
+        while (mask > 0x8) {
+            sum += if ((info and mask) != 0) 1 else 0
+            mask = mask shr 1
+        }
+        return sum + leapDays(year)
+    }
+    
+    private fun monthDays(year: Int, month: Int): Int {
+        val info = LUNAR_INFO.getOrNull(year - 1900) ?: return 29
+        val mask = 0x10000 shr month
+        return if ((info and mask.toLong()) == 0L) 29 else 30
+    }
+    
+    private fun leapMonth(year: Int): Int {
+        val info = LUNAR_INFO.getOrNull(year - 1900) ?: return 0
+        return (info and 0xF).toInt()
+    }
+    
+    private fun leapDays(year: Int): Int {
+        val leapMonth = leapMonth(year)
+        if (leapMonth == 0) return 0
+        val info = LUNAR_INFO[year - 1900]
+        return if ((info and 0x10000) != 0L) 30 else 29
     }
     
     /**

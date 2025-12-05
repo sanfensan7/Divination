@@ -173,6 +173,66 @@ object DivinationMethodProvider {
             )
         )
         
+        // 添加手相功能
+        methods.add(
+            DivinationMethod(
+                id = "palmistry",
+                name = "手相",
+                description = "通过手掌照片解读性格与命运",
+                iconResId = R.drawable.ic_palmistry,
+                type = 1,
+                inputFields = listOf(
+                    InputField(
+                        id = "palmImage",
+                        name = "手相照片",
+                        type = 5,
+                        hint = "请拍摄或选择清晰的手掌照片"
+                    ),
+                    InputField(
+                        id = "gender",
+                        name = "性别",
+                        type = 4,
+                        options = listOf("男", "女")
+                    ),
+                    InputField(
+                        id = "birthDate",
+                        name = "出生日期",
+                        type = 2
+                    )
+                )
+            )
+        )
+        
+        // 添加面相功能
+        methods.add(
+            DivinationMethod(
+                id = "face",
+                name = "面相",
+                description = "通过面部照片解读性格与运势",
+                iconResId = R.drawable.ic_face,
+                type = 1,
+                inputFields = listOf(
+                    InputField(
+                        id = "faceImage",
+                        name = "面相照片",
+                        type = 5,
+                        hint = "请拍摄或选择清晰的正面照片"
+                    ),
+                    InputField(
+                        id = "gender",
+                        name = "性别",
+                        type = 4,
+                        options = listOf("男", "女")
+                    ),
+                    InputField(
+                        id = "birthDate",
+                        name = "出生日期",
+                        type = 2
+                    )
+                )
+            )
+        )
+        
         // 西方传统算命方法
         methods.add(
             DivinationMethod(

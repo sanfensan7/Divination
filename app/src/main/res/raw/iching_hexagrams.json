@@ -1,0 +1,116 @@
+{
+  "version": "1.0.0",
+  "source": "整理自《周易》等公开资料，仅供学习与占卜体验使用",
+  "hexagrams": [
+    {
+      "id": 1,
+      "sequence": 1,
+      "name": "乾",
+      "pinyin": "qián",
+      "alias": "乾为天",
+      "upper_trigram": "乾",
+      "lower_trigram": "乾",
+      "upper_trigram_code": "111",
+      "lower_trigram_code": "111",
+      "binary_code": "111111",
+      "unicode_symbol": "䷀",
+      "brief": "健而不息，天行刚健之象。",
+      "guaci": "乾：元，亨，利，贞。",
+      "tuan": "大哉乾元，万物资始，乃统天。",
+      "xiang": "天行健，君子以自强不息。",
+      "yao": [
+        {
+          "index": 1,
+          "position_name": "初九",
+          "text": "潜龙，勿用。",
+          "xiang": "潜龙勿用，阳在下也。"
+        },
+        {
+          "index": 2,
+          "position_name": "九二",
+          "text": "见龙在田，利见大人。",
+          "xiang": "见龙在田，德施普也。"
+        },
+        {
+          "index": 3,
+          "position_name": "九三",
+          "text": "君子终日乾乾，夕惕若厉，无咎。",
+          "xiang": "终日乾乾，反复道也。"
+        },
+        {
+          "index": 4,
+          "position_name": "九四",
+          "text": "或跃在渊，无咎。",
+          "xiang": "或跃在渊，进无咎也。"
+        },
+        {
+          "index": 5,
+          "position_name": "九五",
+          "text": "飞龙在天，利见大人。",
+          "xiang": "飞龙在天，大人造也。"
+        },
+        {
+          "index": 6,
+          "position_name": "上九",
+          "text": "亢龙，有悔。",
+          "xiang": "亢龙有悔，盈不可久也。"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "sequence": 2,
+      "name": "坤",
+      "pinyin": "kūn",
+      "alias": "坤为地",
+      "upper_trigram": "坤",
+      "lower_trigram": "坤",
+      "upper_trigram_code": "000",
+      "lower_trigram_code": "000",
+      "binary_code": "000000",
+      "unicode_symbol": "䷁",
+      "brief": "厚德载物，顺承万物之象。",
+      "guaci": "坤：元，亨，利，牝马之贞。",
+      "tuan": "至哉坤元，万物资生，乃顺承天。",
+      "xiang": "地势坤，君子以厚德载物。",
+      "yao": [
+        {
+          "index": 1,
+          "position_name": "初六",
+          "text": "履霜，坚冰至。",
+          "xiang": "履霜坚冰，阴始凝也。"
+        },
+        {
+          "index": 2,
+          "position_name": "六二",
+          "text": "直方大，不习无不利。",
+          "xiang": "六二之动，直以方也。"
+        },
+        {
+          "index": 3,
+          "position_name": "六三",
+          "text": "含章可贞，或从王事，无成有终。",
+          "xiang": "含章可贞，以时发也。"
+        },
+        {
+          "index": 4,
+          "position_name": "六四",
+          "text": "括囊，无咎无誉。",
+          "xiang": "括囊无咎，慎不害也。"
+        },
+        {
+          "index": 5,
+          "position_name": "六五",
+          "text": "黄裳，元吉。",
+          "xiang": "黄裳元吉，文在中也。"
+        },
+        {
+          "index": 6,
+          "position_name": "上六",
+          "text": "龙战于野，其血玄黄。",
+          "xiang": "龙战于野，其道穷也。"
+        }
+      ]
+    }
+  ]
+}

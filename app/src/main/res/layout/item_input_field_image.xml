@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+    
+    <!-- 字段标签 -->
+    <TextView
+        android:id="@+id/tvFieldLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="照片"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+    
+    <!-- 提示文本 -->
+    <TextView
+        android:id="@+id/tvImageHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="请拍摄或选择照片"
+        android:textSize="14sp"
+        android:textColor="#CCCCCC"
+        android:layout_marginBottom="12dp" />
+    
+    <!-- 图片预览容器 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#2A1A3A">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            
+            <!-- 图片预览 -->
+            <ImageView
+                android:id="@+id/ivImagePreview"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:background="#3A2A4A"
+                android:contentDescription="照片预览"
+                android:visibility="gone" />
+            
+            <!-- 占位图标 -->
+            <ImageView
+                android:id="@+id/ivPlaceholder"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_divination"
+                android:tint="#9C27B0"
+                android:contentDescription="添加照片"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="20dp" />
+            
+            <!-- 按钮容器 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp">
+                
+                <!-- 拍照按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTakePhoto"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="拍照"
+                    android:textColor="@android:color/white"
+                    app:icon="@android:drawable/ic_menu_camera"
+                    app:iconTint="@android:color/white"
+                    app:backgroundTint="#9C27B0"
+                    app:cornerRadius="8dp"
+                    android:layout_marginEnd="8dp" />
+                
+                <!-- 选择照片按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSelectPhoto"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="相册"
+                    android:textColor="@android:color/white"
+                    app:icon="@android:drawable/ic_menu_gallery"
+                    app:iconTint="@android:color/white"
+                    app:backgroundTint="#7B1FA2"
+                    app:cornerRadius="8dp"
+                    android:layout_marginStart="8dp" />
+                    
+            </LinearLayout>
+            
+            <!-- 删除按钮（仅在有图片时显示） -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRemovePhoto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="删除照片"
+                android:textColor="@android:color/white"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconTint="@android:color/white"
+                app:backgroundTint="#D32F2F"
+                app:cornerRadius="8dp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+                
+        </LinearLayout>
+        
+    </com.google.android.material.card.MaterialCardView>
+    
+</LinearLayout>

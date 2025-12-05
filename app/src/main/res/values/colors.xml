@@ -58,4 +58,10 @@
     <!-- 半透明遮罩 -->
     <color name="overlay_dark">#80000000</color>
     <color name="overlay_light">#40FFFFFF</color>
+    
+    <!-- 通用颜色别名 -->
+    <color name="background">@color/divination_background</color>
+    <color name="primary">@color/divination_primary</color>
+    <color name="text_primary">@color/divination_text</color>
+    <color name="text_secondary">@color/divination_text_secondary</color>
 </resources>
