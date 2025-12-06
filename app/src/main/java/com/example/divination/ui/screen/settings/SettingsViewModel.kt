@@ -1,7 +1,11 @@
 package com.example.divination.ui.screen.settings
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.divination.utils.LocalStorageService
+import java.util.Calendar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,17 +17,17 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val todayUsageCount: Int = 0,
     val totalUsageCount: Int = 0,
-    val appVersion: String = "1.1.4",
+    val appVersion: String = "1.0.1",
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
 /**
  * 设置页面 ViewModel
- * 
+ *
  * 管理设置页面的状态和业务逻辑
  */
-class SettingsViewModel : ViewModel() {
+class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -36,14 +40,22 @@ class SettingsViewModel : ViewModel() {
      * 加载使用统计数据
      */
     private fun loadUsageStatistics() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true, error = null)
                 
-                // TODO: 从 LocalStorageService 加载实际数据
-                // 目前使用模拟数据
-                val todayCount = 5
-                val totalCount = 42
+                val context = getApplication<Application>().applicationContext
+                val results = LocalStorageService.getAllResults(context)
+                val totalCount = results.size
+                
+                val calendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val startOfDay = calendar.timeInMillis
+                val todayCount = results.count { it.createTime.time >= startOfDay }
                 
                 _uiState.value = _uiState.value.copy(
                     todayUsageCount = todayCount,

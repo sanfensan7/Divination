@@ -30,17 +30,76 @@ class DivinationResultFragment : Fragment() {
     private val binding get() = _binding ?: throw IllegalStateException("Binding is null, Fragment可能已被销毁")
     
     /**
-     * 判断是否需要展示星盘
+     * 判断内容是否包含星盘相关提示
+     */
+    private val astrologyKeywords = listOf(
+        "星盘",
+        "行星",
+        "宫位",
+        "占星",
+        "上升点",
+        "中天点",
+        "十二宫",
+        "行星落点",
+        "星体分布",
+        "星体配置",
+        "太阳位于",
+        "月亮位于",
+        "水星位于",
+        "金星位于",
+        "火星位于",
+        "木星位于",
+        "土星位于",
+        "天王星位于",
+        "海王星位于",
+        "冥王星位于"
+    ).map { it.lowercase(Locale.ROOT) }
+    
+    private val astrologyPattern = Regex("(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星).{0,4}(位于|落在)")
+    
+    private fun containsAstrologyHints(text: String?): Boolean {
+        if (text.isNullOrBlank()) return false
+        val normalized = text.lowercase(Locale.getDefault())
+        val keywordHit = astrologyKeywords.any { normalized.contains(it) }
+        if (keywordHit) return true
+        return astrologyPattern.containsMatchIn(text)
+    }
+    
+    /**
+     * 是否展示星盘：占星方法必展示，或内容包含关键字
      */
     private fun shouldDisplayAstrologyChart(result: DivinationResult, methodId: String?): Boolean {
-        if (methodId == "astrology") return true
-        val keywords = listOf("星盘", "行星", "宫位", "占星", "上升点", "中天点", "十二宫")
-        return result.resultSections.any { section ->
-            keywords.any { keyword ->
-                section.title.contains(keyword, ignoreCase = true) ||
-                    section.content.contains(keyword, ignoreCase = true)
-            }
+        val normalizedMethodId = (methodId ?: result.methodId).lowercase(Locale.ROOT)
+        if (normalizedMethodId == "astrology" ||
+            normalizedMethodId.contains("astro") ||
+            normalizedMethodId.contains("占星") ||
+            normalizedMethodId.contains("星盘")
+        ) {
+            Log.d("DivinationResult", "methodId命中占星关键字：$normalizedMethodId")
+            return true
         }
+        
+        val hasSectionHints = result.resultSections.any { section ->
+            containsAstrologyHints(section.title) || containsAstrologyHints(section.content)
+        }
+        if (hasSectionHints) {
+            Log.d("DivinationResult", "结果段落命中占星关键字")
+            return true
+        }
+        
+        val combinedText = result.resultSections.joinToString("\n") { section ->
+            "${section.title}\n${section.content}"
+        }
+        val combinedMatch = containsAstrologyHints(combinedText)
+        if (combinedMatch) {
+            Log.d("DivinationResult", "合并文本命中占星关键字")
+        } else {
+            Log.d(
+                "DivinationResult",
+                "未命中占星关键字，methodId=$normalizedMethodId，段落数=${result.resultSections.size}"
+            )
+        }
+        return combinedMatch
     }
     
     private lateinit var resultId: String
@@ -149,6 +208,7 @@ class DivinationResultFragment : Fragment() {
             }
             
             result?.let { result ->
+                Log.d("DivinationResult", "展示结果 methodId=${result.methodId}, id=${result.id}")
                 // 检查结果部分是否为空
                 if (result.resultSections.isEmpty()) {
                     showEmptyResultView("结果内容为空")
@@ -515,7 +575,8 @@ class DivinationResultFragment : Fragment() {
                     
                     // 设置星盘数据，如果失败再尝试使用默认数据
                     try {
-                        binding.astrologyChartView.setChartData(content)
+                        val normalizedContent = normalizeAstrologyText(content)
+                        binding.astrologyChartView.setChartData(normalizedContent)
                     } catch (e: Exception) {
                         Log.e("DivinationResult", "设置星盘数据失败，尝试使用默认数据", e)
                         binding.astrologyChartView.useDefaultChartData()
@@ -546,7 +607,31 @@ class DivinationResultFragment : Fragment() {
             }
         }
     }
-    
+
+    /**
+     * 规范化星盘文本，去除列表符号、Markdown 标记等干扰字符
+     */
+    private fun normalizeAstrologyText(raw: String): String {
+        return raw
+            .lines()
+            .joinToString("\n") { line ->
+                var sanitized = line
+                    .replace("**", "")
+                    .replace("__", "")
+                    .replace("`", "")
+                    .trimStart()
+                // 去掉常见列表或引用前缀
+                sanitized = sanitized
+                    .removePrefix("* ")
+                    .removePrefix("- ")
+                    .removePrefix("• ")
+                    .removePrefix("+ ")
+                    .removePrefix("> ")
+                    .trimStart()
+                sanitized
+            }
+    }
+
     /**
      * 显示空结果视图
      */

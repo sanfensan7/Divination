@@ -3,14 +3,17 @@ package com.example.divination.ui.screen.settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.TextButton
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.divination.R
 import com.example.divination.ui.component.*
 import com.example.divination.ui.navigation.Routes
 import com.example.divination.ui.theme.IOSColor
@@ -29,6 +32,9 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberLazyListState()
+    val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    var showAboutDialog by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -105,7 +111,7 @@ fun SettingsScreen(
                         IOSListItem(
                             title = "隐私政策",
                             onClick = {
-                                // TODO: 打开隐私政策页面
+                                uriHandler.openUri(PRIVACY_POLICY_URL)
                             }
                         )
                     }
@@ -131,7 +137,7 @@ fun SettingsScreen(
                         IOSListItem(
                             title = "关于我们",
                             onClick = {
-                                // TODO: 打开关于页面
+                                showAboutDialog = true
                             }
                         )
                     }
@@ -139,4 +145,21 @@ fun SettingsScreen(
             }
         }
     }
+    
+    if (showAboutDialog) {
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text(text = "关于我们") },
+            text = {
+                Text(text = context.getString(R.string.about_content, uiState.appVersion))
+            },
+            confirmButton = {
+                TextButton(onClick = { showAboutDialog = false }) {
+                    Text(text = "确定")
+                }
+            }
+        )
+    }
 }
+
+private const val PRIVACY_POLICY_URL = "https://example.com/privacy"

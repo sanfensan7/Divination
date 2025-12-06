@@ -8,6 +8,9 @@ import android.os.Build
  */
 object AppConfig {
     
+    const val DEFAULT_VERSION_NAME = "1.0.1"
+    const val DEFAULT_VERSION_CODE = 1
+    
     // 版本信息 - 使用函数在运行时获取而不是使用BuildConfig
     private var cachedVersionName: String? = null
     private var cachedVersionCode: Int? = null
@@ -18,7 +21,7 @@ object AppConfig {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 cachedVersionName = packageInfo.versionName
             } catch (e: Exception) {
-                cachedVersionName = "1.1.4" // 出错时使用默认值
+                cachedVersionName = DEFAULT_VERSION_NAME // 出错时使用默认值
             }
         }
         return cachedVersionName!!
@@ -35,7 +38,7 @@ object AppConfig {
                     packageInfo.versionCode // 使用旧API但抑制警告
                 }
             } catch (e: Exception) {
-                cachedVersionCode = 3 // 出错时使用默认值
+                cachedVersionCode = DEFAULT_VERSION_CODE // 出错时使用默认值
             }
         }
         return cachedVersionCode!!
