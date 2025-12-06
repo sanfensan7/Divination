@@ -1,5 +1,6 @@
 package com.example.divination.ui.component
 
+import android.widget.NumberPicker
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -19,8 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.divination.ui.theme.IOSColor
@@ -166,6 +169,63 @@ fun IOSDatePicker(
     }
 }
 
+@Composable
+private fun YearWheelPicker(
+    year: Int,
+    onYearChanged: (Int) -> Unit,
+    range: IntRange = 1900..2100
+) {
+    val clampedYear = year.coerceIn(range.first, range.last)
+    val height = 140.dp
+    val overlayHeight = with(LocalDensity.current) { (height / 4).toPx() }
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .padding(horizontal = IOSSpacing.Large)
+    ) {
+        AndroidView(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    color = IOSColor.BackgroundSecondary,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 12.dp),
+            factory = { context ->
+                NumberPicker(context).apply {
+                    minValue = range.first
+                    maxValue = range.last
+                    wrapSelectorWheel = false
+                    value = clampedYear
+                    descendantFocusability = NumberPicker.FOCUS_BLOCK_DESCENDANTS
+                    textSize = 48f
+                    setOnValueChangedListener { _, _, newVal ->
+                        onYearChanged(newVal)
+                    }
+                }
+            },
+            update = { picker ->
+                if (picker.value != clampedYear) {
+                    picker.value = clampedYear
+                }
+            }
+        )
+        
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Divider(color = IOSColor.SystemBlue.copy(alpha = 0.3f), thickness = 1.dp)
+            Spacer(modifier = Modifier.weight(1f))
+            Divider(color = IOSColor.SystemBlue.copy(alpha = 0.3f), thickness = 1.dp)
+        }
+    }
+}
+
 /**
  * 日期选择器内容
  */
@@ -197,12 +257,9 @@ private fun DatePickerContent(
         
         Spacer(modifier = Modifier.height(IOSSpacing.Small))
         
-        // 年份选择
-        DatePickerRow(
-            label = "年",
-            value = year,
-            range = 1900..2100,
-            onValueChanged = { newYear ->
+        YearWheelPicker(
+            year = year,
+            onYearChanged = { newYear ->
                 val newCalendar = Calendar.getInstance().apply {
                     time = selectedDate
                     set(Calendar.YEAR, newYear)

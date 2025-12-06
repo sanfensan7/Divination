@@ -1,4 +1,4 @@
-package com.example.divination.ui
+    package com.example.divination.ui
 
 import android.graphics.Color
 import android.os.Bundle
@@ -6,7 +6,6 @@ import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
-
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -29,6 +28,20 @@ class DivinationResultFragment : Fragment() {
 
     private var _binding: FragmentDivinationResultBinding? = null
     private val binding get() = _binding ?: throw IllegalStateException("Binding is null, Fragment可能已被销毁")
+    
+    /**
+     * 判断是否需要展示星盘
+     */
+    private fun shouldDisplayAstrologyChart(result: DivinationResult, methodId: String?): Boolean {
+        if (methodId == "astrology") return true
+        val keywords = listOf("星盘", "行星", "宫位", "占星", "上升点", "中天点", "十二宫")
+        return result.resultSections.any { section ->
+            keywords.any { keyword ->
+                section.title.contains(keyword, ignoreCase = true) ||
+                    section.content.contains(keyword, ignoreCase = true)
+            }
+        }
+    }
     
     private lateinit var resultId: String
     private var result: DivinationResult? = null
@@ -152,11 +165,10 @@ class DivinationResultFragment : Fragment() {
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                 binding.tvResultDate.text = "分析时间：${dateFormat.format(result.createTime)}"
                 
-                // 检查是否是占星学结果，如果是则显示星盘
-                if (method?.id == "astrology") {
+                val shouldShowChart = shouldDisplayAstrologyChart(result, method?.id)
+                if (shouldShowChart) {
                     setupAstrologyChart(result)
                 } else {
-                    // 非占星学结果，隐藏星盘视图
                     binding.astrologyChartView.visibility = View.GONE
                 }
                 

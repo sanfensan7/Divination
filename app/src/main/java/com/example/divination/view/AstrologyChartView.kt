@@ -1,22 +1,39 @@
 package com.example.divination.view
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RadialGradient
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Shader
+import android.graphics.SweepGradient
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AnticipateOvershootInterpolator
+import android.view.animation.BounceInterpolator
+import android.view.animation.CycleInterpolator
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
+import android.view.animation.OvershootInterpolator
+
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * 占星星盘视图
@@ -30,38 +47,160 @@ class AstrologyChartView @JvmOverloads constructor(
 
     // 绘制画笔
     private val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = Color.parseColor("#33FFFFFF")
         style = Paint.Style.STROKE
-        strokeWidth = 1f
+        strokeWidth = 1.5f
     }
     
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.GRAY
+        color = Color.parseColor("#44FFFFFF")
         style = Paint.Style.STROKE
         strokeWidth = 1f
     }
     
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = Color.WHITE
         textSize = 24f
         textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
     }
     
     private val planetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         textSize = 20f
         textAlign = Paint.Align.CENTER
+        color = Color.WHITE
+        typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
     }
     
     private val zodiacPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        alpha = 80 // 半透明
+        alpha = 60 // 半透明
     }
     
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
+        color = Color.parseColor("#B3FFFFFF")
         textSize = 16f
         textAlign = Paint.Align.LEFT
+    }
+    
+    private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#10121A")
+        style = Paint.Style.FILL
+    }
+    
+    private val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = 2f
+    }
+    
+    private val outerRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#080A10")
+        style = Paint.Style.STROKE
+        strokeWidth = 36f
+    }
+
+    private val middleRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#111625")
+        style = Paint.Style.STROKE
+        strokeWidth = 18f
+    }
+
+    private val houseRingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#1E2537")
+        style = Paint.Style.STROKE
+        strokeWidth = 14f
+    }
+
+    private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#44506F")
+        strokeWidth = 2.5f
+    }
+
+    private val planetNodePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.WHITE
+    }
+    
+    private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#66FFFFFF")
+        style = Paint.Style.FILL
+        maskFilter = BlurMaskFilter(50f, BlurMaskFilter.Blur.NORMAL)
+    }
+    
+    private val sparklePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.FILL
+    }
+    
+    private val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    
+    private val sparklePoints: List<Pair<Float, Float>> = List(36) {
+        Random.nextFloat() to Random.nextFloat()
+    }
+    
+    private var radialGradient: RadialGradient? = null
+    private var sweepGradient: SweepGradient? = null
+    private var shimmerGradient: LinearGradient? = null
+    
+    private var ambientAnimator: ValueAnimator? = null
+    private var orbitAnimator: ValueAnimator? = null
+    private var glowPhase = 0f
+    private var rotationOffset = 0f
+    
+    init {
+        setLayerType(LAYER_TYPE_HARDWARE, null)
+    }
+    
+    private fun startAnimations() {
+        if (ambientAnimator == null) {
+            ambientAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 5000L
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.RESTART
+                interpolator = AccelerateDecelerateInterpolator()
+                addUpdateListener { animator ->
+                    glowPhase = animator.animatedValue as Float
+                    invalidate()
+                }
+            }
+        }
+        if (orbitAnimator == null) {
+            orbitAnimator = ValueAnimator.ofFloat(0f, 360f).apply {
+                duration = 20000L
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.RESTART
+                interpolator = LinearInterpolator()
+                addUpdateListener { animator ->
+                    rotationOffset = animator.animatedValue as Float
+                    invalidate()
+                }
+            }
+        }
+        if (ambientAnimator?.isStarted != true) {
+            ambientAnimator?.start()
+        }
+        if (orbitAnimator?.isStarted != true) {
+            orbitAnimator?.start()
+        }
+    }
+    
+    private fun stopAnimations() {
+        ambientAnimator?.cancel()
+        orbitAnimator?.cancel()
+    }
+    
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        startAnimations()
+    }
+    
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stopAnimations()
     }
     
     // 日期和时间
@@ -74,20 +213,20 @@ class AstrologyChartView @JvmOverloads constructor(
     
     // 行星符号
     private val planetSymbols = mapOf(
-        "太阳" to "☉",
-        "月亮" to "☽",
-        "水星" to "☿",
-        "金星" to "♀",
-        "火星" to "♂",
-        "木星" to "♃",
-        "土星" to "♄",
-        "天王星" to "♅",
-        "海王星" to "♆",
-        "冥王星" to "♇",
+        "太阳" to "",
+        "月亮" to "",
+        "水星" to "",
+        "金星" to "",
+        "火星" to "",
+        "木星" to "",
+        "土星" to "",
+        "天王星" to "",
+        "海王星" to "",
+        "冥王星" to "",
         "上升点" to "上升",
         "中天点" to "中天",
-        "北交点" to "☊",
-        "南交点" to "☋"
+        "北交点" to "",
+        "南交点" to ""
     )
     
     // 行星位置数据
@@ -307,13 +446,13 @@ class AstrologyChartView @JvmOverloads constructor(
                 // 使用多个正则表达式匹配不同格式的相位描述
                 val aspectRegexPatterns = listOf(
                     // 标准格式：太阳和木星形成三分相(120度)
-                    "(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点)\\s*(和|与)\\s*(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点)\\s*形成\\s*(三分相|六分相|四分相|对分相|反对相|合相)\\s*\\(?\\s*(\\d+)\\s*[度°]?\\s*\\)?",
+                    "(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点|北交点|南交点)\\s*(和|与)\\s*(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点|北交点|南交点)\\s*形成\\s*(三分相|六分相|四分相|对分相|反对相|合相)\\s*\\(?\\s*(\\d+)\\s*[度°]?\\s*\\)?",
                     
                     // 简化格式：太阳-木星 三分相(120°)
-                    "(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点)\\s*[-—]\\s*(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点)\\s*[：:]?\\s*(三分相|六分相|四分相|对分相|反对相|合相)\\s*\\(?\\s*(\\d+)?\\s*[度°]?\\s*\\)?",
+                    "(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点|北交点|南交点)\\s*[-—]\\s*(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点|北交点|南交点)\\s*[：:]?\\s*(三分相|六分相|四分相|对分相|反对相|合相)\\s*\\(?\\s*(\\d+)?\\s*[度°]?\\s*\\)?",
                     
                     // 极简格式：太阳木星三分相
-                    "(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点)\\s*(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点)\\s*(三分相|六分相|四分相|对分相|反对相|合相)"
+                    "(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点|北交点|南交点)\\s*(太阳|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|上升点|中天点|北交点|南交点)\\s*(三分相|六分相|四分相|对分相|反对相|合相)"
                 )
                 
                 var aspectCount = 0
@@ -396,18 +535,18 @@ class AstrologyChartView @JvmOverloads constructor(
      */
     private fun getZodiacIndex(zodiacSign: String): Int {
         return when {
-                zodiacSign == "♈" || zodiacSign.contains("白羊") -> 0
-                zodiacSign == "♉" || zodiacSign.contains("金牛") -> 1
-                zodiacSign == "♊" || zodiacSign.contains("双子") -> 2
-                zodiacSign == "♋" || zodiacSign.contains("巨蟹") -> 3
-                zodiacSign == "♌" || zodiacSign.contains("狮子") -> 4
-                zodiacSign == "♍" || zodiacSign.contains("处女") -> 5
-                zodiacSign == "♎" || zodiacSign.contains("天秤") -> 6
-                zodiacSign == "♏" || zodiacSign.contains("天蝎") -> 7
-                zodiacSign == "♐" || zodiacSign.contains("射手") -> 8
-                zodiacSign == "♑" || zodiacSign.contains("摩羯") -> 9
-                zodiacSign == "♒" || zodiacSign.contains("水瓶") -> 10
-                zodiacSign == "♓" || zodiacSign.contains("双鱼") -> 11
+                zodiacSign == "" || zodiacSign.contains("白羊") -> 0
+                zodiacSign == "" || zodiacSign.contains("金牛") -> 1
+                zodiacSign == "" || zodiacSign.contains("双子") -> 2
+                zodiacSign == "" || zodiacSign.contains("巨蟹") -> 3
+                zodiacSign == "" || zodiacSign.contains("狮子") -> 4
+                zodiacSign == "" || zodiacSign.contains("处女") -> 5
+                zodiacSign == "" || zodiacSign.contains("天秤") -> 6
+                zodiacSign == "" || zodiacSign.contains("天蝎") -> 7
+                zodiacSign == "" || zodiacSign.contains("射手") -> 8
+                zodiacSign == "" || zodiacSign.contains("摩羯") -> 9
+                zodiacSign == "" || zodiacSign.contains("水瓶") -> 10
+                zodiacSign == "" || zodiacSign.contains("双鱼") -> 11
             else -> 0 // 默认白羊座
         }
     }
@@ -462,17 +601,60 @@ class AstrologyChartView @JvmOverloads constructor(
         }
     }
     
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        val radius = min(w, h) / 2f
+        radialGradient = RadialGradient(
+            w / 2f,
+            h / 2f,
+            radius * 1.3f,
+            intArrayOf(Color.parseColor("#1A1F2E"), Color.parseColor("#05060B")),
+            floatArrayOf(0f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        sweepGradient = SweepGradient(
+            w / 2f,
+            h / 2f,
+            intArrayOf(
+                Color.parseColor("#55FFFFFF"),
+                Color.parseColor("#00FFFFFF"),
+                Color.parseColor("#55FFFFFF")
+            ),
+            floatArrayOf(0f, 0.5f, 1f)
+        )
+        shimmerGradient = LinearGradient(
+            0f,
+            0f,
+            w.toFloat(),
+            h.toFloat(),
+            intArrayOf(Color.parseColor("#22FFFFFF"), Color.TRANSPARENT),
+            floatArrayOf(0f, 1f),
+            Shader.TileMode.CLAMP
+        )
+    }
+    
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         
         // 获取视图的中心点和半径
         val centerX = width / 2f
         val centerY = height / 2f
-        val radius = min(width, height) / 2f - 40f
+        val radius = min(width, height) / 2f - 60f
+        val outerRingRadius = radius + 46f
+        val cardinalRadius = outerRingRadius + 18f
+
+        drawStarfieldBackground(canvas, centerX, centerY, radius)
+        drawAmbientGlow(canvas, centerX, centerY, radius)
+        drawSparkles(canvas)
+        drawOuterRings(canvas, centerX, centerY, radius, outerRingRadius)
+        drawCardinalLabels(canvas, centerX, centerY, cardinalRadius)
         
         // 绘制日期和时间
         labelPaint.textAlign = Paint.Align.LEFT
         canvas.drawText(chartDate, 10f, 30f, labelPaint)
+        
+        canvas.save()
+        canvas.rotate(rotationOffset, centerX, centerY)
         
         // 绘制十二星座背景区域
         drawZodiacSectors(canvas, centerX, centerY, radius)
@@ -486,6 +668,7 @@ class AstrologyChartView @JvmOverloads constructor(
         
         // 绘制十二宫的分隔线
         drawHouseLines(canvas, centerX, centerY, radius)
+        drawHouseLabels(canvas, centerX, centerY, radius)
         
         // 绘制十二星座符号
         drawZodiacSymbols(canvas, centerX, centerY, radius)
@@ -498,6 +681,8 @@ class AstrologyChartView @JvmOverloads constructor(
         
         // 绘制行星位置
         drawPlanets(canvas, centerX, centerY, radius)
+        
+        canvas.restore()
         
         // 绘制相位线标签
         drawAspectLegend(canvas, 10f, height - 40f)
@@ -529,6 +714,59 @@ class AstrologyChartView @JvmOverloads constructor(
         }
     }
     
+    private fun drawOuterRings(
+        canvas: Canvas,
+        centerX: Float,
+        centerY: Float,
+        radius: Float,
+        outerRingRadius: Float
+    ) {
+        canvas.drawCircle(centerX, centerY, outerRingRadius, outerRingPaint)
+        canvas.drawCircle(centerX, centerY, radius + 28f, middleRingPaint)
+        canvas.drawCircle(centerX, centerY, radius + 8f, houseRingPaint)
+        
+        fun drawAxis(angleDeg: Int) {
+            val angle = Math.toRadians(angleDeg.toDouble())
+            val endX = centerX + outerRingRadius * cos(angle).toFloat()
+            val endY = centerY + outerRingRadius * sin(angle).toFloat()
+            canvas.drawLine(centerX, centerY, endX, endY, axisPaint)
+        }
+        
+        drawAxis(ascendant)
+        drawAxis((ascendant + 180) % 360)
+        drawAxis(midheaven)
+        drawAxis((midheaven + 180) % 360)
+    }
+    
+    private fun drawCardinalLabels(
+        canvas: Canvas,
+        centerX: Float,
+        centerY: Float,
+        radius: Float
+    ) {
+        val originalAlign = labelPaint.textAlign
+        val originalSize = labelPaint.textSize
+        labelPaint.textAlign = Paint.Align.CENTER
+        labelPaint.textSize = 18f
+        
+        val points = listOf(
+            "上升" to ascendant,
+            "下降" to (ascendant + 180) % 360,
+            "中天" to midheaven,
+            "天底" to (midheaven + 180) % 360
+        )
+        
+        points.forEach { (text, degree) ->
+            val angle = Math.toRadians(degree.toDouble())
+            val x = centerX + (radius + 12f) * cos(angle).toFloat()
+            val y = centerY + (radius + 12f) * sin(angle).toFloat()
+            canvas.drawText(text, x, y, labelPaint)
+        }
+        
+        labelPaint.textAlign = originalAlign
+        labelPaint.textSize = originalSize
+    }
+    
     private fun drawHouseLines(canvas: Canvas, centerX: Float, centerY: Float, radius: Float) {
         // 如果没有解析到宫位数据，使用默认的均匀分布
         val houseCount = if (houses.isEmpty()) 12 else houses.size
@@ -546,14 +784,27 @@ class AstrologyChartView @JvmOverloads constructor(
             val endY = centerY + radius * sin(angle).toFloat()
             
             canvas.drawLine(startX, startY, endX, endY, linePaint)
-            
-            // 显示宫位号码
-            val textX = centerX + radius * 0.7f * cos(angle).toFloat()
-            val textY = centerY + radius * 0.7f * sin(angle).toFloat()
-            
-            textPaint.textSize = 16f
+        }
+    }
+    
+    private fun drawHouseLabels(canvas: Canvas, centerX: Float, centerY: Float, radius: Float) {
+        val houseCount = if (houses.isEmpty()) 12 else houses.size
+        val originalSize = textPaint.textSize
+        textPaint.textSize = 16f
+        
+        for (i in 0 until houseCount) {
+            val angle = if (houses.isEmpty()) {
+                Math.toRadians((i * 30 + 15).toDouble())
+            } else {
+                val span = (houses[i].endDegree - houses[i].startDegree + 360) % 360
+                Math.toRadians((houses[i].startDegree + span / 2.0).toDouble())
+            }
+            val textX = centerX + radius * 0.72f * cos(angle).toFloat()
+            val textY = centerY + radius * 0.72f * sin(angle).toFloat()
             canvas.drawText((i + 1).toString(), textX, textY, textPaint)
         }
+        
+        textPaint.textSize = originalSize
     }
     
     private fun drawZodiacSymbols(canvas: Canvas, centerX: Float, centerY: Float, radius: Float) {
@@ -649,9 +900,9 @@ class AstrologyChartView @JvmOverloads constructor(
     }
     
     private fun drawAspectLines(canvas: Canvas, centerX: Float, centerY: Float, radius: Float) {
-        aspects.forEach { aspect ->
-            val planet1 = planets[aspect.planet1] ?: return@forEach
-            val planet2 = planets[aspect.planet2] ?: return@forEach
+        aspects.forEachIndexed { index, aspect ->
+            val planet1 = planets[aspect.planet1] ?: return@forEachIndexed
+            val planet2 = planets[aspect.planet2] ?: return@forEachIndexed
             
             val angle1 = Math.toRadians(planet1.degree.toDouble())
             val angle2 = Math.toRadians(planet2.degree.toDouble())
@@ -689,6 +940,8 @@ class AstrologyChartView @JvmOverloads constructor(
                 }
             }
             
+            val alphaPulse = (0.4f + 0.6f * (0.5f + 0.5f * sin((glowPhase * 2 * PI + index).toFloat()))).coerceIn(0f, 1f)
+            linePaint.alpha = (alphaPulse * 255).toInt().coerceIn(60, 255)
             canvas.drawLine(x1, y1, x2, y2, linePaint)
         }
     }
@@ -698,6 +951,7 @@ class AstrologyChartView @JvmOverloads constructor(
         labelPaint.textAlign = Paint.Align.LEFT
         
         // 绘制相位线图例
+        
         linePaint.strokeWidth = 2f
         
         // 三分相 (120°)
@@ -719,15 +973,59 @@ class AstrologyChartView @JvmOverloads constructor(
         linePaint.color = Color.RED
         canvas.drawLine(x + 240f, y, x + 270f, y, linePaint)
         canvas.drawText("四分相", x + 280f, y + 5f, labelPaint)
+        
+        // 二分相 (150°)
+        linePaint.color = Color.YELLOW
+        canvas.drawLine(x + 310f, y, x + 340f, y, linePaint)
+        canvas.drawText("二分相", x + 350f, y + 5f, labelPaint)
     }
     
+    private fun drawStarfieldBackground(canvas: Canvas, centerX: Float, centerY: Float, radius: Float) {
+        val prevShader = backgroundPaint.shader
+        backgroundPaint.shader = radialGradient
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
+        backgroundPaint.shader = prevShader
+        
+        shimmerGradient?.let { gradient ->
+            val matrix = Matrix().apply {
+                setRotate(rotationOffset / 2f, centerX, centerY)
+                postTranslate(glowPhase * 50f, glowPhase * 25f)
+            }
+            gradient.setLocalMatrix(matrix)
+            overlayPaint.shader = gradient
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), overlayPaint)
+            overlayPaint.shader = null
+        }
+    }
+    
+    private fun drawAmbientGlow(canvas: Canvas, centerX: Float, centerY: Float, radius: Float) {
+        val pulse = 0.75f + 0.25f * sin((glowPhase * 2 * PI).toFloat())
+        val glowRadius = radius * (0.95f + 0.05f * pulse)
+        val alpha = (80 + 120 * pulse).toInt().coerceIn(40, 255)
+        glowPaint.alpha = alpha
+        canvas.drawCircle(centerX, centerY, glowRadius, glowPaint)
+    }
+
+    private fun drawSparkles(canvas: Canvas) {
+        val widthF = width.toFloat()
+        val heightF = height.toFloat()
+        sparklePoints.forEachIndexed { index, point ->
+            val x = point.first * widthF
+            val y = point.second * heightF
+            val pulse = 0.4f + 0.6f * (0.5f + 0.5f * sin((glowPhase * 4 * PI + index).toFloat()))
+            sparklePaint.alpha = (pulse * 255).toInt().coerceIn(50, 255)
+            val sparkleRadius = 1.5f + 2.5f * pulse
+            canvas.drawCircle(x, y, sparkleRadius, sparklePaint)
+        }
+    }
+
     private fun getZodiacBackgroundColor(index: Int): Int {
         return when (index % 4) {
-            0 -> Color.rgb(255, 240, 240)  // 火象星座 - 浅红
-            1 -> Color.rgb(240, 255, 240)  // 土象星座 - 浅绿
-            2 -> Color.rgb(240, 240, 255)  // 风象星座 - 浅蓝
-            3 -> Color.rgb(255, 255, 240)  // 水象星座 - 浅黄
-            else -> Color.WHITE
+            0 -> Color.argb(40, 255, 140, 0)   // 火象 - 暖橙
+            1 -> Color.argb(40, 34, 139, 34)  // 土象 - 深绿
+            2 -> Color.argb(40, 135, 206, 250) // 风象 - 天蓝
+            3 -> Color.argb(40, 255, 255, 240) // 水象 - 浅黄
+            else -> Color.argb(30, 255, 255, 255)
         }
     }
     

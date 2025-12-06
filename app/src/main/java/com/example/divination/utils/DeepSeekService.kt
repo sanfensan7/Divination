@@ -101,13 +101,24 @@ object DeepSeekService {
                     
                     // 创建模拟响应
                     val response = simulateResponse(prompt)
+                    val poemSection = if (method.id == "zhouyi") {
+                        generateDivinationPoem(method, inputData, response)
+                    } else {
+                        null
+                    }
                     
                     // 添加模拟标记和解析响应
                     val simulatedSection = ResultSection(
                         title = "⚠️ 本地模拟提示",
                         content = "本次结果由本地算法模拟生成，非DeepSeek AI服务输出。为获取更专业、更个性化的AI算命结果，请在设置中配置有效的API密钥。\n\n高质量的AI算命结果将包含更丰富的专业分析和更个性化的解读。"
                     )
-                    val sections = parseResponseToSections(response)
+                    val sections = ResultFormatter.format(
+                        method.id,
+                        inputData,
+                        parseResponseToSections(response),
+                        poemSection
+                    )
+                    
                     val result = DivinationResult(
                         id = UUID.randomUUID().toString(),
                         methodId = method.id,
@@ -156,13 +167,22 @@ object DeepSeekService {
                     
                     // 创建模拟响应
                     val response = simulateResponse(prompt)
-                    
-                    // 添加模拟标记和解析响应
+                    val poemSection = if (method.id == "zhouyi") {
+                        generateDivinationPoem(method, inputData, response)
+                    } else {
+                        null
+                    }
                     val errorSection = ResultSection(
                         title = "⚠️ AI服务连接失败",
-                        content = "DeepSeek AI服务调用失败：${e.message}\n\n系统已自动切换到本地算法模拟模式，但分析深度和个性化程度将受限。\n\n可能原因：\n1. 网络连接不稳定\n2. API密钥无效或已过期\n3. API服务暂时不可用\n\n建议：检查网络连接并在设置中更新API密钥。"
+                        content = "DeepSeek AI服务调用失败：${e.message}\n\n系统已自动切换到本地算法模拟模式，但分析深度和个性化程度将受限。\n\n可能原因：\n1. 网络连接不稳定\n2. API密钥无效或已过期\n3. API服务暂时不可用\n\n建议：检查网络连接并在设置中更新API密钥。\n\n请注意：本次结果为模拟生成，仅供参考。"
                     )
-                    val sections = parseResponseToSections(response)
+                    val sections = ResultFormatter.format(
+                        method.id,
+                        inputData,
+                        parseResponseToSections(response),
+                        poemSection
+                    )
+                    
                     val result = DivinationResult(
                         id = UUID.randomUUID().toString(),
                         methodId = method.id,
@@ -202,13 +222,11 @@ object DeepSeekService {
      */
     private fun generatePrompt(method: DivinationMethod, inputData: Map<String, String>): String {
         val basePrompt = """
-        你是一位精通中国传统和西方占卜术的资深算命大师，拥有30年实践经验。
-        请根据以下信息，生成一份详细、专业且符合文化背景的${method.name}分析结果：
+        你是一位有亲和力、经验丰富的占卜顾问，请根据以下信息输出一份既专业又像朋友聊天的${method.name}分析：
         
         ## 分析背景
         - 分析方法：${method.name}（${if (method.type == 1) "中国传统" else "西方传统"}）
-        - 分析目的：提供准确、有深度的命运解读，帮助用户理解自身状况和未来发展
-        - 分析特点：结合传统理论与现代心理学，既尊重传统又符合现代人思维
+        - 目标：用清晰、贴心的语言给出可执行的指导，直接回应用户问题
         
         ## 用户输入信息
         ${inputData.entries.joinToString("\n") { entry ->
@@ -219,32 +237,30 @@ object DeepSeekService {
             }
         }}
         
-        ## 输出要求
-        1. 内容分为至少4-5个独立章节，每章节有明确标题和详细解读
-        2. 整体分析长度应在1200-2000字之间，内容丰富且专业
-        3. 前面章节必须使用大量专业术语和深度分析，展示你的专业性和权威性
-           - 要大量使用行业专业术语，尽可能展现深奥晦涩的分析风格
-           - 引用经典著作和理论，使用专业的引用格式和术语解释
-           - 分析必须详尽深入，使用完整的理论框架，展示分析的系统性和专业性
-        4. 必须包含传统文化元素、术语和典故，配合专业理论分析
-        5. 分析必须全面平衡，既指出积极优势，也要直接指出潜在问题、性格弱点和需要注意的风险
-        6. 避免极端负面预测（如灾难、死亡等），但应指出若不改变会带来的实际挑战和后果
-        7. 给予具体建议时，应包含规避风险、克服弱点的实际方法，至少3-5条
-        8. 在适当位置引用传统经典语句增加可信度和深度
-        9. 最后必须添加一个【总结】部分，与前面的专业分析形成鲜明对比：
-           - 使用非常通俗易懂的语言，像与朋友对话一样，简明扼要地总结关键点
-           - 完全避免任何专业术语，确保普通人也能轻松理解
-           - 使用日常对话风格，就像朋友间聊天那样自然随意
-           - 总结部分应当是独立的，即使不看前面的专业分析，也能明白主要结论
-           - 总结应包含对用户情况的关键洞察和最重要的建议，但用最简单的语言表达
+        ## 写作语气
+        - 口吻亲切，像理解行业的好朋友，仍保持专业度
+        - 控制在500-800字，句子短而清楚
+        - 如必须使用专业名词，请立刻用括号解释
+        - 除非必要，不要堆砌术语或长段落
+        - 直接点出用户输入中的核心问题，给出对应回答
         
-        ## 特殊要求
+        ## 统一格式（务必按顺序输出，标题使用【】）
+        1. 【问题回应】：2-3句话直接回答用户提出的问题，引用用户输入中的关键字段
+        2. 【核心洞察】：列出2-3条要点，每条前缀“• ”，包含专业判断但语言友好
+        3. 【机会与风险】：各用1-2句话说明当前可把握的机会与需要避免的风险
+        4. 【行动建议】：给出至少3条可执行建议，使用“1. 2. 3.”编号，内容具体
+        5. 【暖心总结】：用轻松语气收尾，类似朋友叮嘱，强调最重要的提醒
+        
+        ## 其他要求
+        - 每个部分之间保留一个空行，方便展示
+        - 若用户未提供明确问题，请根据输入信息自行概括问题并在【问题回应】中说明
+        - 不要添加额外的章节或结尾语
+        - 不要使用 Markdown 列表符号以外的格式
+        
+        ## 方法专项补充
         ${getMethodSpecificPrompt(method.id)}
         
-        请确保分析符合${method.name}的核心理论和方法论，不要混入其他占卜体系的元素。
-        分析应具有个性化和针对性，避免空泛、模糊的表述。
-        提供的建议应当实用、可操作，既有正面引导也有问题警示。
-        前面的章节要展示你作为专业大师的深奥知识和洞察力，使用专业行话，而总结部分则要用外行人容易理解的白话，像老朋友一样直接聊天。
+        请确保所有内容与${method.name}的理论一致，信息真实可靠。
         """
         
         return basePrompt
