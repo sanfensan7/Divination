@@ -1,9 +1,9 @@
 # Divination · 神机妙算 App
 
-> 面向现代用户的全谱系算命/心理洞察应用，融合中国传统玄学、MBTI 心理测评与 DeepSeek AI，采用 Jetpack Compose 打造 iOS 风格体验。
+> 面向现代用户的全谱系算命/心理洞察应用，融合中国传统玄学、MBTI 心理测评与 DeepSeek AI，采用 Jetpack Compose 打造极简风格体验。
 
 - **平台**：Android 8.0+（API 26）  
-- **版本**：v1.2.0  
+- **版本**：v1.0.2  
 - **技术栈**：Kotlin · Jetpack Compose · Room · Glide · MPAndroidChart · DeepSeek API
 
 ---
@@ -14,7 +14,7 @@
 2. [系统架构](#系统架构)  
 3. [核心模块](#核心模块)  
 4. [DeepSeek API 诊断指南](#deepseek-api-诊断指南)  
-5. [iOS 风格动画系统](#ios-风格动画系统)  
+5. [极简风格动画系统](#极简-风格动画系统)  
 6. [安装与运行](#安装与运行)  
 7. [项目结构](#项目结构)  
 8. [常见问题](#常见问题)  
@@ -116,14 +116,14 @@ curl -X POST https://api.deepseek.com/v1/chat/completions \
 
 ---
 
-## iOS 风格动画系统
+## 极简风格动画系统
 
 - **核心文件**：
   - `SpringAnimation.kt`：standard / fast / gentle / smooth / bouncy / listItem 弹簧配置。
   - `ButtonAnimation.kt`：按钮/卡片按压缩放（0.94 / 0.97），亮度降低 15%。
   - `ListItemAnimation.kt`：渐入 + 50 ms 错峰，支持 hover。
   - `LoadingAnimation.kt`：内容淡入、滑动转场、骨架屏脉冲、指示器旋转。
-  - `PageTransition.kt`：iOS 推入/推出，边缘滑动返回。
+  - `PageTransition.kt`： 推入/推出，边缘滑动返回。
   - `ScrollBehavior.kt`：Large Title 收缩、背景模糊透明联动。
 - **参数基线**：按钮 200 ms、页面 350 ms、快速转场 250 ms、列表项 300 ms（偏移 20 dp）、hover 1.02 倍。
 - **设计原则**：物理真实感、一致性、性能优先（保持 60 fps）、尊重“减少动态”系统设置。

@@ -3,19 +3,29 @@ package com.example.divination.ui.screen.result
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.Text
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,24 +87,48 @@ fun DivinationResultScreen(
             title = "算命结果",
             scrollState = scrollState,
             actions = {
-                IconButton(
-                    enabled = uiState.result != null,
-                    onClick = {
-                        uiState.result?.let { result ->
-                            coroutineScope.launch {
-                                try {
-                                    ShareUtils.shareDivinationResult(context, result)
-                                } catch (e: Exception) {
-                                    // TODO: 可用 Snackbar/Toast 提示
+                val enabled = uiState.result != null
+                val interaction = remember { MutableInteractionSource() }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(14.dp),
+                            clip = false
+                        )
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            brush = Brush.linearGradient(
+                                listOf(Color(0xFF74F2CE), Color(0xFF5C8AF8))
+                            )
+                        )
+                        .then(
+                            Modifier.border(
+                                BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                                shape = RoundedCornerShape(14.dp)
+                            )
+                        )
+                        .clickable(
+                            enabled = enabled,
+                            interactionSource = interaction,
+                            indication = rememberRipple(bounded = false, color = Color.White)
+                        ) {
+                            uiState.result?.let { result ->
+                                coroutineScope.launch {
+                                    try {
+                                        ShareUtils.shareDivinationResult(context, result)
+                                    } catch (_: Exception) {
+                                    }
                                 }
                             }
-                        }
-                    }
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Share,
                         contentDescription = "分享",
-                        tint = IOSColor.SystemBlue
+                        tint = Color.White
                     )
                 }
             }

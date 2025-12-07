@@ -46,17 +46,17 @@ object ShareUtils {
         val contentWidth = width - padding * 2
 
         val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor("#111111")
             textSize = 48f
             typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         }
         val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor("#1F2933")
             textSize = 60f
             typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         }
         val bodyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor("#374151")
             textSize = 40f
         }
 
@@ -93,20 +93,22 @@ object ShareUtils {
         val bitmap = Bitmap.createBitmap(width, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        val gradient = LinearGradient(
-            0f,
-            0f,
-            canvas.width.toFloat(),
-            canvas.height.toFloat(),
-            intArrayOf(
-                Color.parseColor("#5F2EEA"),
-                Color.parseColor("#312879"),
-                Color.parseColor("#0F172A")
-            ),
-            floatArrayOf(0f, 0.6f, 1f),
-            Shader.TileMode.CLAMP
+        canvas.drawColor(Color.WHITE)
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 6f
+            color = Color.parseColor("#D5DAE3")
+        }
+        val borderInset = 36f
+        canvas.drawRoundRect(
+            borderInset,
+            borderInset,
+            bitmap.width - borderInset,
+            bitmap.height - borderInset,
+            40f,
+            40f,
+            borderPaint
         )
-        canvas.drawPaint(Paint().apply { shader = gradient })
 
         var currentY = padding.toFloat()
 
@@ -133,7 +135,7 @@ object ShareUtils {
         // 底部标识
         val footerText = "来自 Divination 智能算命"
         val footerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#B3FFFFFF")
+            color = Color.parseColor("#9CA3AF")
             textSize = 32f
         }
         canvas.drawText(
@@ -152,22 +154,22 @@ object ShareUtils {
         val contentWidth = width - padding * 2
 
         val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor("#111111")
             textSize = 52f
             typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         }
         val typePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#60A5FA")
+            color = Color.parseColor("#1F2933")
             textSize = 120f
             typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         }
         val subPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor("#374151")
             textSize = 44f
         }
 
         val dimensionPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor("#4B5563")
             textSize = 40f
         }
 
@@ -209,13 +211,7 @@ object ShareUtils {
 
         val bitmap = Bitmap.createBitmap(width, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        val gradient = LinearGradient(
-            0f, 0f, width.toFloat(), totalHeight.toFloat(),
-            intArrayOf(Color.parseColor("#0F172A"), Color.parseColor("#1D2671")),
-            floatArrayOf(0f, 1f),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawPaint(Paint().apply { shader = gradient })
+        canvas.drawColor(Color.WHITE)
 
         var currentY = padding.toFloat()
         fun drawLayout(layout: StaticLayout) {

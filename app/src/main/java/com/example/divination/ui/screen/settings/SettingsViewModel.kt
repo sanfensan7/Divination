@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val todayUsageCount: Int = 0,
     val totalUsageCount: Int = 0,
-    val appVersion: String = "1.0.1",
+    val appVersion: String = "1.0.2",
     val isLoading: Boolean = false,
     val error: String? = null
 )

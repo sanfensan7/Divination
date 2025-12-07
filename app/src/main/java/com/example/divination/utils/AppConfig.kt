@@ -8,8 +8,8 @@ import android.os.Build
  */
 object AppConfig {
     
-    const val DEFAULT_VERSION_NAME = "1.0.1"
-    const val DEFAULT_VERSION_CODE = 1
+    const val DEFAULT_VERSION_NAME = "1.0.2"
+    const val DEFAULT_VERSION_CODE = 5
     
     // 版本信息 - 使用函数在运行时获取而不是使用BuildConfig
     private var cachedVersionName: String? = null
