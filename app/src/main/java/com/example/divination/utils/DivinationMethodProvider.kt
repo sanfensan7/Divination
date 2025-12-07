@@ -260,6 +260,13 @@ object DivinationMethodProvider {
                 type = 2,
                 inputFields = listOf(
                     InputField(
+                        id = "question",
+                        name = "想了解的问题",
+                        type = 1,
+                        required = false,
+                        hint = "例如：事业发展、感情走向、学习规划"
+                    ),
+                    InputField(
                         id = "birthDate",
                         name = "出生日期",
                         type = 2

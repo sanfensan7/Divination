@@ -8,14 +8,28 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Divider
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,13 +37,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.divination.model.InputField
-import com.example.divination.ui.component.*
+import com.example.divination.ui.component.IOSButton
+import com.example.divination.ui.component.IOSButtonStyle
+import com.example.divination.ui.component.IOSCard
+import com.example.divination.ui.component.IOSDatePicker
+import com.example.divination.ui.component.IOSLoadingIndicator
+import com.example.divination.ui.component.IOSNavigationBar
+import com.example.divination.ui.component.IOSSection
+import com.example.divination.ui.component.TarotAnimationOverlay
 import com.example.divination.ui.theme.IOSColor
 import com.example.divination.ui.theme.IOSSpacing
 import com.example.divination.ui.theme.IOSTypography
 import com.example.divination.utils.DeepSeekService
 import com.example.divination.utils.ImageUtils
 import com.example.divination.utils.LocalStorageService
+import com.example.divination.utils.safePerformDivination
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,20 +84,45 @@ fun DivinationDetailScreen(
     val scrollState = rememberLazyListState()
     val context = LocalContext.current
     var isOnlineSubmitting by remember { mutableStateOf(false) }
-    
+    var showTarotOverlay by remember { mutableStateOf(false) }
+    var pendingTarotInput by remember { mutableStateOf<Map<String, String>?>(null) }
+
+    fun submitWithInput(inputData: Map<String, String>) {
+        val currentMethod = uiState.method ?: return
+        isOnlineSubmitting = true
+
+        // 使用安全的算命包装函数，确保总能生成结果
+        safePerformDivination(
+            context = context,
+            method = currentMethod,
+            inputData = inputData
+        ) { result, error ->
+            isOnlineSubmitting = false
+
+            if (result != null) {
+                // 自动保存结果到历史记录
+                LocalStorageService.saveResult(context, result)
+                onNavigateToResult(result.id)
+            } else {
+                // 如果连本地模式也失败，显示错误
+                Toast.makeText(
+                    context,
+                    error?.message ?: "算命服务不可用，请稍后重试",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        // iOS 风格导航栏
         IOSNavigationBar(
             title = uiState.method?.name ?: "算命详情",
             scrollState = scrollState
         )
-        
-        // 内容区域
+
         LazyColumn(
             state = scrollState,
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(1f),
+            modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(vertical = IOSSpacing.Medium)
         ) {
             // 加载状态
@@ -183,33 +230,13 @@ fun DivinationDetailScreen(
                                     return@IOSButton
                                 }
 
-                                // 其他算命方法：使用 DeepSeek 在线算命
-                                isOnlineSubmitting = true
-
-                                DeepSeekService.performDivination(
-                                    context = context,
-                                    method = currentMethod,
-                                    inputData = uiState.inputValues
-                                ) { result, error ->
-                                    isOnlineSubmitting = false
-
-                                    if (error != null || result == null) {
-                                        // 在线调用失败时，提示并回退到本地模拟提交流程
-                                        Toast.makeText(
-                                            context,
-                                            error?.message ?: "AI 服务不可用，已使用本地模式",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-
-                                        viewModel.submitDivination { resultId ->
-                                            onNavigateToResult(resultId)
-                                        }
-                                    } else {
-                                        // 保存结果并跳转结果页
-                                        LocalStorageService.saveResult(context, result)
-                                        onNavigateToResult(result.id)
-                                    }
+                                if (currentMethod.id == "tarot") {
+                                    pendingTarotInput = uiState.inputValues.toMap()
+                                    showTarotOverlay = true
+                                    return@IOSButton
                                 }
+
+                                submitWithInput(uiState.inputValues)
                             },
                             enabled = !isOnlineSubmitting,
                             modifier = Modifier.fillMaxWidth()
@@ -232,6 +259,37 @@ fun DivinationDetailScreen(
                 }
             }
         }
+    }
+
+    if (showTarotOverlay) {
+        TarotAnimationOverlay(
+            visible = showTarotOverlay,
+            onDismiss = { showTarotOverlay = false },
+            onCompleted = { drawnCards ->
+                showTarotOverlay = false
+                val baseInput = pendingTarotInput ?: uiState.inputValues.toMap()
+                val enhancedInput = baseInput.toMutableMap().apply {
+                    drawnCards.forEachIndexed { index, card ->
+                        val slot = index + 1
+                        put("tarot_card_${slot}_name", card.name)
+                        put("tarot_card_${slot}_position", card.position)
+                        put("tarot_card_${slot}_position_hint", card.positionHint)
+                        put("tarot_card_${slot}_meaning", card.meaning)
+                        put("tarot_card_${slot}_reversed", card.isReversed.toString())
+                    }
+                    val summary = drawnCards.joinToString(separator = "，") { card ->
+                        buildString {
+                            append("[${card.position}]${card.name}")
+                            if (card.isReversed) append("(逆位)")
+                            append("：${card.meaning}")
+                        }
+                    }
+                    put("tarot_cards_summary", summary)
+                }
+                pendingTarotInput = null
+                submitWithInput(enhancedInput)
+            }
+        )
     }
 }
 

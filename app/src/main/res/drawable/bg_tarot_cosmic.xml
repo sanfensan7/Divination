@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 深色宇宙背景 -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#05030F"
+                android:centerColor="#0B1F3A"
+                android:endColor="#1A2A4F"
+                android:type="linear" />
+        </shape>
+    </item>
+
+    <!-- 紫色星云晕染 -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="450dp"
+                android:centerX="30%"
+                android:centerY="35%"
+                android:startColor="#55224C96"
+                android:endColor="#00112233" />
+        </shape>
+    </item>
+
+    <!-- 金色光晕 -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="380dp"
+                android:centerX="80%"
+                android:centerY="15%"
+                android:startColor="#332E1F5C"
+                android:endColor="#00000000" />
+        </shape>
+    </item>
+
+    <!-- 星点噪声 -->
+    <item>
+        <shape android:shape="rectangle">
+            <padding android:bottom="0dp" />
+            <solid android:color="#00000000" />
+            <size android:height="1dp" />
+            <corners android:radius="0dp" />
+        </shape>
+    </item>
+</layer-list>

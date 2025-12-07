@@ -36,7 +36,9 @@ class ProfileViewModel(
     fun loadData() {
         viewModelScope.launch {
             try {
-                _uiState.value = ProfileUiState.Loading
+                if (_uiState.value !is ProfileUiState.Success) {
+                    _uiState.value = ProfileUiState.Loading
+                }
                 
                 // 加载历史记录
                 val historyRecords = LocalStorageService.getAllResults(context)
@@ -64,8 +66,13 @@ class ProfileViewModel(
             try {
                 val success = LocalStorageService.deleteResult(context, resultId)
                 if (success) {
-                    // 重新加载数据
-                    loadData()
+                    val currentState = _uiState.value
+                    if (currentState is ProfileUiState.Success) {
+                        val updatedHistory = currentState.historyRecords.filterNot { it.id == resultId }
+                        _uiState.value = currentState.copy(historyRecords = updatedHistory)
+                    } else {
+                        loadData()
+                    }
                 } else {
                     _uiState.value = ProfileUiState.Error("删除失败")
                 }
@@ -81,6 +88,9 @@ class ProfileViewModel(
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
+                // 显示加载状态
+                _uiState.value = ProfileUiState.Loading
+                
                 val currentState = _uiState.value
                 if (currentState is ProfileUiState.Success) {
                     // 基于当前状态中的历史记录逐条删除，避免重复读取存储层
@@ -94,7 +104,7 @@ class ProfileViewModel(
                         LocalStorageService.deleteResult(context, result.id)
                     }
                 }
-                // 重新加载数据
+                // 重新加载数据，确保 UI 实时更新
                 loadData()
             } catch (e: Exception) {
                 _uiState.value = ProfileUiState.Error(e.message ?: "清空失败")

@@ -79,6 +79,26 @@ object DivinationRecordService {
     }
     
     /**
+     * 删除指定记录
+     */
+    fun deleteRecord(context: Context, recordId: String): Boolean {
+        return try {
+            val records = getAllRecords(context).toMutableList()
+            val removed = records.removeIf { it.id == recordId }
+            
+            if (removed) {
+                val json = gson.toJson(records)
+                getPrefs(context).edit().putString(KEY_RECORDS, json).apply()
+            }
+            
+            removed
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+    
+    /**
      * 获取SharedPreferences
      */
     private fun getPrefs(context: Context): SharedPreferences {

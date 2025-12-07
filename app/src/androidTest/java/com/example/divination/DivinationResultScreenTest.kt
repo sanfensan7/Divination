@@ -113,7 +113,7 @@ class DivinationResultScreenTest {
     }
     
     @Test
-    fun 页面应该显示保存按钮() {
+    fun 页面应该显示自动保存提示() {
         composeTestRule.setContent {
             IOSTheme {
                 DivinationResultScreen(resultId = "bazi_123")
@@ -122,8 +122,8 @@ class DivinationResultScreenTest {
         
         composeTestRule.waitForIdle()
         
-        // 验证保存按钮存在
-        composeTestRule.onNodeWithText("保存到历史记录").assertExists()
+        // 验证自动保存提示存在
+        composeTestRule.onNodeWithText("✓ 已自动保存到历史记录").assertExists()
     }
     
     @Test
@@ -140,24 +140,6 @@ class DivinationResultScreenTest {
         composeTestRule.onNodeWithText("返回").assertExists()
     }
     
-    @Test
-    fun 点击保存按钮应该触发保存操作() {
-        composeTestRule.setContent {
-            IOSTheme {
-                DivinationResultScreen(resultId = "bazi_123")
-            }
-        }
-        
-        composeTestRule.waitForIdle()
-        
-        // 点击保存按钮
-        composeTestRule.onNodeWithText("保存到历史记录").performClick()
-        
-        composeTestRule.waitForIdle()
-        
-        // 验证按钮文本变化或成功提示出现
-        // 注意：由于保存操作很快，可能需要等待
-    }
     
     @Test
     fun 点击返回按钮应该触发导航() {

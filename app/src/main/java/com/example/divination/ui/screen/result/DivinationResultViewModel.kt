@@ -37,6 +37,7 @@ class DivinationResultViewModel(
     
     private val _uiState = MutableStateFlow(DivinationResultUiState())
     val uiState: StateFlow<DivinationResultUiState> = _uiState.asStateFlow()
+    private var hasAutoSaved = false
     
     init {
         loadResult()
@@ -56,14 +57,20 @@ class DivinationResultViewModel(
                 if (result != null) {
                     _uiState.value = _uiState.value.copy(
                         result = result,
-                        isLoading = false
+                        isLoading = false,
+                        saveSuccess = true
                     )
                 } else {
                     // 如果本地没有，生成模拟结果（实际应用中应该从服务器获取）
                     val mockResult = generateMockResult(resultId)
+                    // 自动保存模拟结果
+                    LocalStorageService.saveResult(context, mockResult)
+                    hasAutoSaved = true
+                    
                     _uiState.value = _uiState.value.copy(
                         result = mockResult,
-                        isLoading = false
+                        isLoading = false,
+                        saveSuccess = true  // 自动标记为已保存
                     )
                 }
             } catch (e: Exception) {

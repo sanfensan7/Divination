@@ -212,18 +212,10 @@ fun DivinationResultScreen(
                                 .padding(top = IOSSpacing.Large, bottom = IOSSpacing.Medium),
                             verticalArrangement = Arrangement.spacedBy(IOSSpacing.Medium)
                         ) {
-                            // 保存按钮
-                            IOSButton(
-                                text = if (uiState.isSaving) "保存中..." else "保存到历史记录",
-                                onClick = { viewModel.saveResult() },
-                                enabled = !uiState.isSaving,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            
-                            // 保存成功提示
+                            // 自动保存提示
                             if (uiState.saveSuccess) {
                                 Text(
-                                    text = "✓ 已保存到历史记录",
+                                    text = "✓ 已自动保存到历史记录",
                                     style = IOSTypography.Footnote,
                                     color = IOSColor.SystemGreen,
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -234,7 +226,6 @@ fun DivinationResultScreen(
                             IOSButton(
                                 text = "返回",
                                 onClick = onNavigateBack,
-                                style = IOSButtonStyle.Secondary,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

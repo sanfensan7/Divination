@@ -1,24 +1,32 @@
 package com.example.divination.ui
 
 import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import com.example.divination.R
 import com.example.divination.databinding.FragmentTarotAnimationBinding
@@ -29,13 +37,10 @@ import com.example.divination.utils.DeepSeekService
 import com.example.divination.utils.DivinationMethodProvider
 import com.example.divination.utils.LocalStorageService
 import com.example.divination.view.TarotCardView
-import java.util.*
+import com.example.divination.utils.safePerformDivination
+import java.util.Random
 import kotlin.math.min
 import android.widget.Toast
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
-import androidx.core.view.doOnLayout
-import com.example.divination.utils.safePerformDivination
 
 class TarotAnimationFragment : Fragment() {
 

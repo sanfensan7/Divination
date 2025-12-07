@@ -1,9 +1,15 @@
 package com.example.divination.ui.screen.profile
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -11,10 +17,26 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Psychology
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.divination.model.DivinationResult
@@ -25,6 +47,8 @@ import com.example.divination.ui.theme.IOSSpacing
 import com.example.divination.ui.theme.IOSTypography
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * 个人页面
@@ -272,13 +296,100 @@ private fun HistoryRecordItem(
     onItemClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val swipeOffset = remember { Animatable(0f) }
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    val maxSwipePx = with(density) { 120.dp.toPx() }
+
+    LaunchedEffect(record.id) {
+        swipeOffset.snapTo(0f)
+    }
+
+    fun closeSwipe() = scope.launch {
+        swipeOffset.animateTo(0f, animationSpec = tween(250))
+    }
+
+    fun settleSwipe() = scope.launch {
+        val shouldOpen = swipeOffset.value < -maxSwipePx * 0.5f
+        if (shouldOpen) {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+        swipeOffset.animateTo(
+            targetValue = if (shouldOpen) -maxSwipePx else 0f,
+            animationSpec = tween(240)
+        )
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = IOSSpacing.PageHorizontal)
             .padding(bottom = IOSSpacing.Small)
     ) {
-        IOSCard(onClick = onItemClick) {
+        // 背景删除动作区域
+        Row(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(vertical = 6.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            IOSColor.SystemRed.copy(alpha = 0.95f),
+                            IOSColor.SystemOrange.copy(alpha = 0.9f)
+                        )
+                    )
+                ),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier
+                    .width(110.dp)
+                    .fillMaxHeight()
+                    .clickable {
+                        showDeleteDialog = true
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                    .padding(vertical = IOSSpacing.Small),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = "删除",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
+        IOSCard(
+            onClick = {
+                if (swipeOffset.value == 0f) {
+                    onItemClick()
+                } else {
+                    closeSwipe()
+                }
+            },
+            modifier = Modifier
+                .offset { IntOffset(swipeOffset.value.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragCancel = { settleSwipe() },
+                        onDragEnd = { settleSwipe() }
+                    ) { change, dragAmount ->
+                        change.consumePositionChange()
+                        val target = (swipeOffset.value + dragAmount)
+                            .coerceIn(-maxSwipePx, 0f)
+                        scope.launch {
+                            swipeOffset.snapTo(target)
+                        }
+                    }
+                }
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -308,6 +419,41 @@ private fun HistoryRecordItem(
                 )
             }
         }
+    }
+    
+    if (showDeleteDialog) {
+        androidx.compose.material.AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    text = "删除历史记录",
+                    style = IOSTypography.Title3
+                )
+            },
+            text = {
+                Text(
+                    text = "确定要删除这条${getMethodName(record.methodId)}的历史记录吗？",
+                    style = IOSTypography.Body
+                )
+            },
+            confirmButton = {
+                IOSButton(
+                    text = "删除",
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteClick()
+                    },
+                    style = IOSButtonStyle.Destructive
+                )
+            },
+            dismissButton = {
+                IOSButton(
+                    text = "取消",
+                    onClick = { showDeleteDialog = false },
+                    style = IOSButtonStyle.Secondary
+                )
+            }
+        )
     }
 }
 
