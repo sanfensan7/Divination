@@ -177,7 +177,6 @@ private fun YearWheelPicker(
 ) {
     val clampedYear = year.coerceIn(range.first, range.last)
     val height = 140.dp
-    val overlayHeight = with(LocalDensity.current) { (height / 4).toPx() }
     
     Box(
         modifier = Modifier

@@ -247,6 +247,32 @@
                         android:background="@drawable/circle_background_outer"
                         android:backgroundTint="@color/gold"/>
                 </LinearLayout>
+
+                <!-- 本地排盘预览（逐字展示） -->
+                <TextView
+                    android:id="@+id/tvLocalPreviewTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="本地真太阳时排盘已完成，等待AI解读..."
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:alpha="0.9"
+                    android:visibility="gone"
+                    android:textAlignment="center"/>
+
+                <TextView
+                    android:id="@+id/tvLocalPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="6dp"
+                    android:alpha="0.92"
+                    android:visibility="gone"
+                    android:fontFamily="monospace"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

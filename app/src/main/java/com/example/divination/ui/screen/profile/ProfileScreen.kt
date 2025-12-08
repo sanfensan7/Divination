@@ -377,6 +377,7 @@ private fun HistoryRecordItem(
             modifier = Modifier
                 .offset { IntOffset(swipeOffset.value.roundToInt(), 0) }
                 .pointerInput(Unit) {
+                    @Suppress("DEPRECATION")
                     detectHorizontalDragGestures(
                         onDragCancel = { settleSwipe() },
                         onDragEnd = { settleSwipe() }

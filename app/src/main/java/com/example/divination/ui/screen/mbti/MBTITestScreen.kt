@@ -41,6 +41,7 @@ import com.example.divination.utils.MBTIStorageService
  * **Validates: Requirements 21.1, 21.2**
  */
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun MBTITestScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToResult: (String) -> Unit = {}

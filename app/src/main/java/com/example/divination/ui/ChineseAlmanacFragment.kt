@@ -60,9 +60,9 @@ class ChineseAlmanacFragment : Fragment() {
         
         // 监听日期变更事件
         calendarView.setOnDateChangeListener { _, year, month, dayOfMonth ->
-            val calendar = Calendar.getInstance()
-            calendar.set(year, month, dayOfMonth)
-            currentDate = calendar.time
+            val selectedCalendar = Calendar.getInstance()
+            selectedCalendar.set(year, month, dayOfMonth)
+            currentDate = selectedCalendar.time
             loadAlmanacData(currentDate)
         }
         

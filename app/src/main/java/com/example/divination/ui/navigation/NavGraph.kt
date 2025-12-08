@@ -130,7 +130,7 @@ fun AppNavGraph(
         composable(Routes.MBTI_TEST) {
             com.example.divination.ui.screen.mbti.MBTITestScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToResult = { resultId ->
+                onNavigateToResult = { _ ->
                     navController.navigate(Routes.MBTI_RESULT) {
                         popUpTo(Routes.MBTI_TEST) { inclusive = true }
                     }

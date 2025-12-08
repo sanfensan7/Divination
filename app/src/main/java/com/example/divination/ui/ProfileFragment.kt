@@ -90,13 +90,8 @@ class ProfileFragment : Fragment() {
      */
     private fun displayMBTIInfo() {
         try {
-            val latestResult = mbtiStorageService.getLatestResult()
-            val testCount = mbtiStorageService.getResultCount()
-            
-            // 这里可以在UI中显示MBTI相关信息
-            // 例如：最近的人格类型、测试次数等
-            // 如果你的布局中有专门的MBTI信息区域，可以在这里更新
-            
+            mbtiStorageService.getLatestResult()
+            mbtiStorageService.getResultCount()
         } catch (e: Exception) {
             e.printStackTrace()
         }

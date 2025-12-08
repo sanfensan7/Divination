@@ -147,7 +147,6 @@ object ImageUtils {
         // 目前返回基本描述
         val width = bitmap.width
         val height = bitmap.height
-        val aspectRatio = width.toFloat() / height.toFloat()
         
         return if (isPalmistry) {
             buildString {

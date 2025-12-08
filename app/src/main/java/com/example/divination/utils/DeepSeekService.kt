@@ -153,6 +153,7 @@ object DeepSeekService {
                     Log.e(TAG, "详细错误信息: ${e.stackTraceToString()}")
                     
                     // 诊断网络连接
+                    @Suppress("DEPRECATION")
                     val networkInfo = try {
                         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
                         val activeNetwork = connectivityManager.activeNetworkInfo

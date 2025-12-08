@@ -88,10 +88,9 @@ class ProfileViewModel(
     fun clearAllHistory() {
         viewModelScope.launch {
             try {
-                // 显示加载状态
-                _uiState.value = ProfileUiState.Loading
-                
+                // 先取当前状态，再切换 Loading，避免丢失已有列表
                 val currentState = _uiState.value
+                _uiState.value = ProfileUiState.Loading
                 if (currentState is ProfileUiState.Success) {
                     // 基于当前状态中的历史记录逐条删除，避免重复读取存储层
                     currentState.historyRecords.forEach { result ->

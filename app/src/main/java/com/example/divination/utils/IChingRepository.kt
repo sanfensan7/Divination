@@ -78,7 +78,7 @@ class IChingRepository private constructor(private val context: Context) {
                     index = y.getInt("index"),
                     positionName = y.getString("position_name"),
                     text = y.getString("text"),
-                    xiang = y.optString("xiang", null)
+                    xiang = y.optString("xiang", "").ifBlank { null }
                 )
             )
         }
@@ -93,11 +93,11 @@ class IChingRepository private constructor(private val context: Context) {
             upperTrigramCode = obj.optString("upper_trigram_code", ""),
             lowerTrigramCode = obj.optString("lower_trigram_code", ""),
             binaryCode = obj.getString("binary_code"),
-            unicodeSymbol = obj.optString("unicode_symbol", null),
-            brief = obj.optString("brief", null),
+            unicodeSymbol = obj.optString("unicode_symbol", "").ifBlank { null },
+            brief = obj.optString("brief", "").ifBlank { null },
             guaci = obj.getString("guaci"),
-            tuan = obj.optString("tuan", null),
-            xiang = obj.optString("xiang", null),
+            tuan = obj.optString("tuan", "").ifBlank { null },
+            xiang = obj.optString("xiang", "").ifBlank { null },
             yao = yaoList
         )
     }

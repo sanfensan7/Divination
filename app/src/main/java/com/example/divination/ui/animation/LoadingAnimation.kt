@@ -114,7 +114,7 @@ object LoadingAnimation {
      */
     @Composable
     fun Modifier.loadingState(
-        isLoading: Boolean
+        @Suppress("UNUSED_PARAMETER") isLoading: Boolean
     ): Modifier {
         return this.animateContentSize(
             animationSpec = SpringAnimation.smooth()

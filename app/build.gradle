@@ -71,6 +71,9 @@ dependencies {
     
     // Gson
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    // 中国农历与八字算法库（本地 JAR）
+    implementation files('libs/lunar-1.7.4.jar')
     
     // 测试依赖
     testImplementation 'junit:junit:4.13.2'

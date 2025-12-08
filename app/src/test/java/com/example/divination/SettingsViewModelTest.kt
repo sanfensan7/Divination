@@ -1,13 +1,20 @@
 package com.example.divination
 
+import android.app.Application
 import com.example.divination.ui.screen.settings.SettingsViewModel
+import com.example.divination.utils.LocalStorageService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
 import org.junit.After
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.*
 
 /**
  * SettingsViewModel 单元测试
@@ -20,16 +27,28 @@ import org.junit.Assert.*
 class SettingsViewModelTest {
     
     private val testDispatcher = StandardTestDispatcher()
+    private lateinit var application: Application
     private lateinit var viewModel: SettingsViewModel
     
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = SettingsViewModel()
+        // 提供带文件目录的假 Application，避免文件 IO 依赖
+        val tempDir = Files.createTempDirectory("settingsVmTest").toFile()
+        application = mockk(relaxed = true)
+        every { application.applicationContext } returns application
+        every { application.filesDir } returns tempDir
+
+        // 避免触发真实存储，返回空列表
+        mockkObject(LocalStorageService)
+        every { LocalStorageService.getAllResults(any()) } returns emptyList()
+
+        viewModel = SettingsViewModel(application)
     }
     
     @After
     fun tearDown() {
+        unmockkObject(LocalStorageService)
         Dispatchers.resetMain()
     }
     
@@ -39,7 +58,7 @@ class SettingsViewModelTest {
     @Test
     fun `initial state should have default values`() {
         val state = viewModel.uiState.value
-        assertEquals("1.1.4", state.appVersion)
+        assertEquals("1.0.2", state.appVersion)
         assertFalse(state.isLoading)
         assertNull(state.error)
     }

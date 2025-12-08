@@ -22,11 +22,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.divination.R
 import com.example.divination.databinding.FragmentDivinationDetailBinding
 import com.example.divination.model.DivinationMethod
 import com.example.divination.model.InputField
 import com.example.divination.ui.CustomDatePickerDialog
+import com.example.divination.logic.engine.BaziEngine
 import com.example.divination.utils.DeepSeekService
 import com.example.divination.utils.DivinationMethodProvider
 import com.example.divination.utils.ImageUtils
@@ -34,7 +36,13 @@ import com.example.divination.utils.LocalStorageService
 import com.example.divination.utils.safePerformDivination
 import com.google.android.material.button.MaterialButton
 import java.io.File
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class DivinationDetailFragment : Fragment() {
 
@@ -51,6 +59,7 @@ class DivinationDetailFragment : Fragment() {
     private var currentImageBitmap: Bitmap? = null
     private var currentImageFieldId: String? = null
     private val imageDataMap = mutableMapOf<String, String>() // fieldId -> base64Image
+    private var localPreviewJob: Job? = null
     
     // 拍照结果处理
     private val takePictureLauncher = registerForActivityResult(
@@ -278,6 +287,10 @@ class DivinationDetailFragment : Fragment() {
             
             // 显示加载状态
             safeShowLoading(true)
+            if (methodId == "bazi") {
+                val preview = buildBaziLocalPreview(inputData)
+                startLocalPreviewTyping(preview ?: "【本地排盘运行中】正在根据真太阳时计算，AI解读稍后呈现...")
+            }
             
             // 执行算命
             method?.let { method ->
@@ -403,16 +416,89 @@ class DivinationDetailFragment : Fragment() {
         if (!isActive || !isAdded || _binding == null) return
         try {
             // 显示/隐藏加载卡片
-            binding.cardLoading.isVisible = isLoading
+            binding.cardLoading.visibility = if (isLoading) View.VISIBLE else View.GONE
+            binding.cardLoading.alpha = if (isLoading) 1f else 0f
+            binding.cardLoading.translationZ = if (isLoading) 20f else 0f
             binding.btnSubmit.isEnabled = !isLoading
             
             // 添加随机的加载提示文本
             if (isLoading) {
                 binding.tvLoadingHint.text = getRandomLoadingHint()
                 startLoadingAnimation()
+                binding.tvLocalPreviewTitle.isVisible = false
+                binding.tvLocalPreview.isVisible = false
+                // 确保用户能看到加载卡片，自动滚动到底部
+                (binding.root as? android.widget.ScrollView)?.post {
+                    (binding.root as? android.widget.ScrollView)?.smoothScrollTo(0, binding.cardLoading.top)
+                }
+                binding.cardLoading.bringToFront()
+                binding.cardLoading.requestLayout()
+                binding.cardLoading.invalidate()
+            } else {
+                clearLocalPreview()
             }
         } catch (e: Exception) {
             // 忽略可能的异常
+        }
+    }
+
+    private fun startLocalPreviewTyping(previewText: String) {
+        if (!isActive || !isAdded || _binding == null) return
+        localPreviewJob?.cancel()
+        binding.tvLocalPreviewTitle.isVisible = true
+        binding.tvLocalPreview.isVisible = true
+        binding.tvLocalPreview.text = ""
+
+        localPreviewJob = viewLifecycleOwner.lifecycleScope.launch {
+            val delayPerChar = 12L
+            previewText.forEach { ch ->
+                binding.tvLocalPreview.append(ch.toString())
+                delay(delayPerChar)
+            }
+        }
+    }
+
+    private fun clearLocalPreview() {
+        localPreviewJob?.cancel()
+        localPreviewJob = null
+        binding.tvLocalPreviewTitle.isVisible = false
+        binding.tvLocalPreview.isVisible = false
+        binding.tvLocalPreview.text = ""
+    }
+
+    private fun buildBaziLocalPreview(inputData: Map<String, String>): String? {
+        return try {
+            val birthDate = inputData["birthDate"] ?: return null
+            val birthTime = inputData["birthTime"] ?: "00:00"
+            val normalizedTime = birthTime.split(":").let { parts ->
+                val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+                val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                String.format("%02d:%02d", hour, minute)
+            }
+            val gender = inputData["gender"] ?: "未知"
+
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+            val dateTime = LocalDateTime.parse("$birthDate $normalizedTime", formatter)
+            val profile = BaziEngine.calculate(dateTime, gender)
+
+            val offsetMinutes = Duration.between(profile.inputTime, profile.trueSolarTime).toMinutes()
+            val offsetText = if (offsetMinutes == 0L) {
+                "真太阳时无需校正"
+            } else {
+                "真太阳时校正${if (offsetMinutes > 0) "+" else ""}${offsetMinutes}分钟"
+            }
+
+            """
+【本地排盘完成，等待AI解读】
+$offsetText
+真太阳时：${profile.trueSolarTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+四柱：${profile.yearPillar.ganzhi} / ${profile.monthPillar.ganzhi} / ${profile.dayPillar.ganzhi} / ${profile.hourPillar.ganzhi}
+五行：${profile.fiveElements.totalSummary}
+用神：${profile.usefulGod}  喜神：${profile.joyfulGod}
+节气：${profile.birthSolarTerm}  生肖：${profile.zodiac}
+            """.trimIndent()
+        } catch (e: Exception) {
+            "【本地排盘运行中】正在根据真太阳时计算，AI解读稍后呈现..."
         }
     }
     
@@ -741,6 +827,7 @@ class DivinationDetailFragment : Fragment() {
     
     override fun onDestroyView() {
         super.onDestroyView()
+        clearLocalPreview()
         currentImageBitmap?.recycle()
         currentImageBitmap = null
         _binding = null

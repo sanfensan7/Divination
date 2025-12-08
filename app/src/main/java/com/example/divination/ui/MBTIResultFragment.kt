@@ -46,6 +46,7 @@ class MBTIResultFragment : Fragment() {
     private lateinit var result: MBTIResult
     private lateinit var storageService: MBTIStorageService
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         result = arguments?.getSerializable(ARG_RESULT) as? MBTIResult

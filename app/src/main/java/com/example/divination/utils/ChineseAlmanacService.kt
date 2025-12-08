@@ -110,7 +110,6 @@ object ChineseAlmanacService {
         val month = calendar.get(Calendar.MONTH) + 1  // 月份从0开始，需要+1
         val day = calendar.get(Calendar.DAY_OF_MONTH)
         val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-        val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
         
         // 创建日期哈希值 - 每天都不同
         val dateHash = generateDateHash(year, month, day, dayOfYear)

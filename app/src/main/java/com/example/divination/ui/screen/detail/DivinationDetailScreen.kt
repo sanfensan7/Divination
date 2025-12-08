@@ -8,6 +8,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +31,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,8 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.divination.model.InputField
 import com.example.divination.ui.component.IOSButton
@@ -48,12 +58,17 @@ import com.example.divination.ui.component.TarotAnimationOverlay
 import com.example.divination.ui.theme.IOSColor
 import com.example.divination.ui.theme.IOSSpacing
 import com.example.divination.ui.theme.IOSTypography
+import com.example.divination.logic.engine.BaziEngine
 import com.example.divination.utils.DeepSeekService
 import com.example.divination.utils.ImageUtils
 import com.example.divination.utils.LocalStorageService
 import com.example.divination.utils.safePerformDivination
 import java.text.SimpleDateFormat
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlinx.coroutines.delay
 
 /**
  * 算命详情页面
@@ -71,6 +86,7 @@ import java.util.*
  * **Validates: Requirements 21.1, 21.2**
  */
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun DivinationDetailScreen(
     methodId: String,
     onNavigateBack: () -> Unit = {},
@@ -86,10 +102,17 @@ fun DivinationDetailScreen(
     var isOnlineSubmitting by remember { mutableStateOf(false) }
     var showTarotOverlay by remember { mutableStateOf(false) }
     var pendingTarotInput by remember { mutableStateOf<Map<String, String>?>(null) }
+    var localPreviewText by remember { mutableStateOf("") }
+    var localPreviewDisplayed by remember { mutableStateOf("") }
 
     fun submitWithInput(inputData: Map<String, String>) {
         val currentMethod = uiState.method ?: return
         isOnlineSubmitting = true
+
+        if (currentMethod.id == "bazi") {
+            localPreviewText = buildBaziLocalPreview(inputData)
+            localPreviewDisplayed = ""
+        }
 
         // 使用安全的算命包装函数，确保总能生成结果
         safePerformDivination(
@@ -114,17 +137,18 @@ fun DivinationDetailScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        IOSNavigationBar(
-            title = uiState.method?.name ?: "算命详情",
-            scrollState = scrollState
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            IOSNavigationBar(
+                title = uiState.method?.name ?: "算命详情",
+                scrollState = scrollState
+            )
 
-        LazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = IOSSpacing.Medium)
-        ) {
+            LazyColumn(
+                state = scrollState,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = IOSSpacing.Medium)
+            ) {
             // 加载状态
             if (uiState.isLoading) {
                 item {
@@ -244,16 +268,66 @@ fun DivinationDetailScreen(
                     }
                 }
                 
-                // 提交加载状态
-                if (isOnlineSubmitting) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(IOSSpacing.Medium),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            IOSLoadingIndicator()
+            }
+        }
+    }
+
+        // 中央弹窗式加载+本地预览
+        AnimatedVisibility(
+            visible = isOnlineSubmitting,
+            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+            exit = fadeOut() + scaleOut(targetScale = 0.9f),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(10f)
+                    .pointerInput(Unit) {
+                        // consume all touch events to block interactions beneath overlay
+                        awaitPointerEventScope {
+                            while (true) { awaitPointerEvent() }
+                        }
+                    }
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center
+            ) {
+                IOSCard(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = IOSSpacing.PageHorizontal)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(IOSSpacing.Medium),
+                        verticalArrangement = Arrangement.spacedBy(IOSSpacing.Small),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IOSLoadingIndicator()
+                        Text(
+                            text = "正在连接AI服务，先看本地排盘...",
+                            style = IOSTypography.Footnote,
+                            color = IOSColor.TextSecondary
+                        )
+
+                        if (uiState.method?.id == "bazi") {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "本地真太阳时排盘",
+                                    style = IOSTypography.Subheadline,
+                                    color = IOSColor.TextPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = localPreviewDisplayed.ifBlank { "【本地排盘运行中】正在根据真太阳时计算，AI解读稍后呈现..." },
+                                    style = IOSTypography.Body,
+                                    color = IOSColor.TextPrimary,
+                                    lineHeight = IOSTypography.Body.lineHeight,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                )
+                            }
                         }
                     }
                 }
@@ -290,6 +364,52 @@ fun DivinationDetailScreen(
                 submitWithInput(enhancedInput)
             }
         )
+    }
+
+    LaunchedEffect(isOnlineSubmitting, localPreviewText) {
+        if (isOnlineSubmitting && localPreviewText.isNotBlank()) {
+            localPreviewDisplayed = ""
+            localPreviewText.forEach { ch ->
+                localPreviewDisplayed += ch
+                delay(12L)
+            }
+        }
+    }
+}
+
+private fun buildBaziLocalPreview(inputData: Map<String, String>): String {
+    return runCatching {
+        val birthDate = inputData["birthDate"] ?: return "【本地排盘运行中】等待输入完整的出生日期/时间"
+        val birthTimeRaw = inputData["birthTime"] ?: "00:00"
+        val normalizedTime = birthTimeRaw.split(":").let { parts ->
+            val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+            val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            String.format("%02d:%02d", hour, minute)
+        }
+        val gender = inputData["gender"] ?: "未知"
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+        val dateTime = LocalDateTime.parse("$birthDate $normalizedTime", formatter)
+        val profile = BaziEngine.calculate(dateTime, gender)
+
+        val offsetMinutes = Duration.between(profile.inputTime, profile.trueSolarTime).toMinutes()
+        val offsetText = if (offsetMinutes == 0L) {
+            "真太阳时无需校正"
+        } else {
+            "真太阳时校正${if (offsetMinutes > 0) "+" else ""}${offsetMinutes}分钟"
+        }
+
+        """
+【本地排盘完成，等待AI解读】
+$offsetText
+真太阳时：${profile.trueSolarTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+四柱：${profile.yearPillar.ganzhi} / ${profile.monthPillar.ganzhi} / ${profile.dayPillar.ganzhi} / ${profile.hourPillar.ganzhi}
+五行：${profile.fiveElements.totalSummary}
+用神：${profile.usefulGod}  喜神：${profile.joyfulGod}
+节气：${profile.birthSolarTerm}  生肖：${profile.zodiac}
+        """.trimIndent()
+    }.getOrElse {
+        "【本地排盘运行中】正在根据真太阳时计算，AI解读稍后呈现..."
     }
 }
 
@@ -390,6 +510,7 @@ private fun InputFieldComponent(
 /**
  * 文本输入字段
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun TextInputField(
     value: String,
@@ -424,6 +545,7 @@ private fun TextInputField(
 /**
  * 日期输入字段
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun DateInputField(
     value: String,
@@ -469,6 +591,7 @@ private fun DateInputField(
 /**
  * 时间输入字段
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun TimeInputField(
     value: String,
@@ -501,6 +624,7 @@ private fun TimeInputField(
 /**
  * 选择输入字段
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun SelectInputField(
     value: String,
@@ -526,6 +650,7 @@ private fun SelectInputField(
 /**
  * 图片输入字段（占位符实现）
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun ImageInputField(
     value: String,
