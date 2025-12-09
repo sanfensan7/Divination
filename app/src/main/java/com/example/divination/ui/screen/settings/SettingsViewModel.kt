@@ -3,6 +3,7 @@ package com.example.divination.ui.screen.settings
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.divination.utils.AppConfig
 import com.example.divination.utils.LocalStorageService
 import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 data class SettingsUiState(
     val todayUsageCount: Int = 0,
     val totalUsageCount: Int = 0,
-    val appVersion: String = "1.0.2",
+    val appVersion: String = AppConfig.DEFAULT_VERSION_NAME,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -33,7 +34,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
     
     init {
+        loadVersionInfo()
         loadUsageStatistics()
+    }
+
+    private fun loadVersionInfo() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = getApplication<Application>().applicationContext
+            val version = AppConfig.getVersionName(context)
+            _uiState.value = _uiState.value.copy(appVersion = version)
+        }
     }
     
     /**
